@@ -1,0 +1,17 @@
+# OpenSymphony engine runtime config (passed via `opensymphony run --config`).
+# This is separate from WORKFLOW.md: WORKFLOW.md is the tracker/agent policy;
+# config.yaml is host runtime settings.
+
+control_plane:
+  # The local control-plane HTTP API + SSE event stream. Visit http://127.0.0.1:2468/
+  # for the snapshot API, or attach the TUI with `opensymphony tui --url http://127.0.0.1:2468`.
+  bind: 127.0.0.1:2468
+
+# `openhands.tool_dir` is only used by the OpenHands harness. Harmless to keep
+# for the Claude harness; the directory is not created unless OpenHands runs.
+openhands:
+  tool_dir: ~/.opensymphony/openhands-server
+
+memory:
+  auto_capture: false
+  auto_archive: false

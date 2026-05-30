@@ -1,0 +1,12 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Phase-1 published mapping is generated per-run; keep it out unless you want history
+# docs/tasks/linear-publish.yaml   # (uncomment to ignore)
+
+# OS / tooling
+.DS_Store
+__pycache__/
+*.pyc

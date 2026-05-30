@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+target/
+.venv/
+__pycache__/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OpenSymphony per-workspace runtime state (engine writes this into the clone)
+.opensymphony/
+
+# Logs / OS
+*.log
+.DS_Store
