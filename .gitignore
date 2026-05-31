@@ -10,3 +10,12 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# Node / TypeScript build (Symphony orchestrator, U1+)
+node_modules/
+dist/
+*.tsbuildinfo
+
+# OpenSymphony engine per-run artifacts
+.opensymphony/
+.opensymphony.after_create.json
