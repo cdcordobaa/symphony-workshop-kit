@@ -57,20 +57,42 @@ Save the clone URL as `SYMPHONY_TARGET_REPO_URL` in `.env`. Return to the kit:
 Open the **kit folder** in Claude Code. `CLAUDE.md` puts Claude in the planning persona and arms the
 AI-DLC workflow + skills.
 
+### 1.0 (Optional) Seed the run with a PRD
+The default workshop derives every decision **live** from the spec — that is the core exercise. If
+instead you want to **lock the variant up front** (tracker, agent, language, conformance/scope) so a
+from-scratch run is fast and repeatable, write a short **PRD** at `spec/PRD.md` and point Claude at
+it. A PRD turns Requirements Analysis from "decide cold" into "confirm / refine".
+
+- A PRD states: problem, goals/non-goals, **locked variant decisions** (D1..Dn), in/out scope,
+  conformance target, and the config contract — but **not** the unit decomposition, which stays the
+  live exercise (§1.2 Units Generation).
+- This kit ships a worked example at `spec/PRD.md` (Notion + Claude Code + TypeScript variant). Edit
+  it, replace it, or delete it to suit your run.
+- **No PRD?** Skip this step — INCEPTION will ask every locked decision as a multiple-choice question
+  during Requirements Analysis instead.
+
+> The PRD seeds the **product** requirements only. The build pipeline is unchanged: spec (+ PRD) →
+> INCEPTION → task package → **Linear** → OpenSymphony engine. (Linear orchestrates the *build*; the
+> product's own runtime tracker is whatever the PRD specifies.)
+
 ### 1.1 Read the spec
 Ask Claude to read `spec/reading-guide.md` and then the deep-read sections of
 `spec/SYMPHONY-SPEC.md` (§3 System Overview, §4 Domain Model, §7 State Machine, §8 Polling/Retry,
-§9 Workspace, §10 Agent Runner, §11 Tracker). This grounds the decomposition in the real spec.
+§9 Workspace, §10 Agent Runner, §11 Tracker). This grounds the decomposition in the real spec. If
+you seeded a PRD (§1.0), have Claude read `spec/PRD.md` too — it is the locked-decision overlay on
+the spec.
 
 ### 1.2 Run AI-DLC INCEPTION
 Tell Claude:
 > "Run the AI-DLC workflow to plan a from-scratch Symphony implementation. Source of truth is
-> `spec/SYMPHONY-SPEC.md`. Greenfield project."
+> `spec/SYMPHONY-SPEC.md` (and `spec/PRD.md` if you seeded one in §1.0). Greenfield project."
 
 AI-DLC will (per `.aidlc-rule-details/`):
 1. **Workspace Detection** → greenfield.
 2. **Requirements Analysis** → choose the tech stack and test framework (you decide, e.g.
    TypeScript+Jest, Rust+cargo, Python+pytest). Writes `aidlc-docs/inception/requirements/requirements.md`.
+   *If you seeded a PRD (§1.0), these come pre-locked — Requirements Analysis confirms/refines the
+   PRD's decisions instead of asking them cold, and still runs the mandatory extension opt-ins.*
 3. **Workflow Planning** → which stages to run.
 4. **Units Generation** → the working units in
    `aidlc-docs/inception/application-design/unit-of-work.md`, `unit-of-work-dependency.md`,
@@ -195,8 +217,41 @@ best-effort SIGTERM cancellation. Run only on a trusted machine against a repo y
 
 ## Appendix D — Reset / re-run
 
-- **Re-plan:** clear `aidlc-docs/` back to the shipped blank state and `docs/tasks/`, then redo
-  Phase 1. (Keep `aidlc-state.md` / `audit.md` headers.)
+### D.1 Restart from scratch (clean slate, PRD-seeded)
+Begin a brand-new run while preserving the previous one. This is the path that pairs with a PRD seed
+(§1.0); it is exactly how a fresh from-the-PRD run is bootstrapped.
+
+1. **Archive the previous run** to its own branch so nothing is lost (source, plans, any build):
+   ```bash
+   git switch -c archive/inception-run-N        # snapshot the finished run
+   git add -A && git commit -m "chore(archive): snapshot AI-DLC run N"
+   ```
+2. **Branch a fresh slate off main.** Switching restores tracked files to main and drops the run-N
+   artifacts out of the working tree:
+   ```bash
+   git switch main
+   git switch -c inception-run-<N+1>
+   rm -rf docs build                            # remove generated leftovers (safe: kept on archive)
+   ```
+3. **Reset the AI-DLC state to blank.** `aidlc-docs/aidlc-state.md` and `aidlc-docs/audit.md` go back
+   to their shipped empty templates (keep the headers); the `aidlc-docs/inception/*` subfolders
+   should contain only `.gitkeep`. (Switching off the archive branch usually does this for you.)
+4. **Author or carry over the PRD** at `spec/PRD.md` (see §1.0), then commit the baseline:
+   ```bash
+   git add -A && git commit -m "chore(inception): baseline for run <N+1> — add PRD seed"
+   ```
+5. **Run Phase 1** from §1.1. Workspace Detection sees a clean greenfield tree and INCEPTION consumes
+   `spec/PRD.md` as the seed.
+
+> Verify-ready checklist before starting: on `inception-run-<N+1>`; `aidlc-state.md` shows no stage
+> progress; `inception/*` is only `.gitkeep`; `docs/` and `build/` absent; `spec/PRD.md` present;
+> `.aidlc-rule-details/` present.
+
+### D.2 Lighter re-plan (same branch)
+- Clear `aidlc-docs/` back to the shipped blank state and `docs/tasks/`, then redo Phase 1.
+  (Keep `aidlc-state.md` / `audit.md` headers.) Use this when you don't need a separate branch.
+
+### D.3 Re-publish / re-implement
 - **Re-publish:** `convert-tasks-to-linear` is idempotent via `linear-publish.yaml` — re-running
   `apply` updates rather than duplicates.
 - **Re-implement a ticket:** move the Linear issue back to `Todo`; the engine re-claims it. Delete
