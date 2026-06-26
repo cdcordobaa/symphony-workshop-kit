@@ -1,0 +1,42 @@
+planningWave: symphony-mvp-walking-skeleton
+linearProject: symphony-d27271e017ad
+linearProjectId: fa0dd199-8293-4d09-b921-6932975c04c6
+team: ARK
+teamId: 791db2f9-c1a3-42c8-978c-938a6ed19aed
+publishedAt: "2026-05-30T18:33:14-05:00"
+publishedVia: linear-mcp
+milestones:
+  "M1: Foundation And Contracts": 3a8c7e3b-3617-477e-ad4a-40e8a7dd0529
+  "M2: Integration And Execution": b7ab3e81-9426-45a6-8fac-5146e83e6ba5
+  "M3: Orchestration Core": ad682f66-4a1d-4aa1-8793-6df21c8a7305
+tasks:
+  SYM-001:
+    issue: ARK-49
+    url: https://linear.app/arkatechie/issue/ARK-49/sym-001-bootstrap-cli-and-config
+    file: docs/tasks/SYM-001-bootstrap-cli-and-config.md
+    milestone: "M1: Foundation And Contracts"
+    blockedBy: []
+  SYM-002:
+    issue: ARK-50
+    url: https://linear.app/arkatechie/issue/ARK-50/sym-002-observability-structured-logs-and-terminal-status
+    file: docs/tasks/SYM-002-observability.md
+    milestone: "M1: Foundation And Contracts"
+    blockedBy: ["ARK-49"]
+  SYM-003:
+    issue: ARK-51
+    url: https://linear.app/arkatechie/issue/ARK-51/sym-003-notion-tracker-read-via-mcp
+    file: docs/tasks/SYM-003-notion-tracker-read-via-mcp.md
+    milestone: "M2: Integration And Execution"
+    blockedBy: ["ARK-49", "ARK-50"]
+  SYM-004:
+    issue: ARK-52
+    url: https://linear.app/arkatechie/issue/ARK-52/sym-004-workspace-manager-and-claude-code-agent-runner
+    file: docs/tasks/SYM-004-workspace-and-agent-runner.md
+    milestone: "M2: Integration And Execution"
+    blockedBy: ["ARK-49", "ARK-50"]
+  SYM-005:
+    issue: ARK-53
+    url: https://linear.app/arkatechie/issue/ARK-53/sym-005-orchestrator-core-poll-dispatch-and-reconcile
+    file: docs/tasks/SYM-005-orchestrator-core.md
+    milestone: "M3: Orchestration Core"
+    blockedBy: ["ARK-49", "ARK-50", "ARK-51", "ARK-52"]

@@ -37,7 +37,7 @@ hooks:
   # Replace with your fork/remote of the target repo (the one seeded from
   # ../target-repo-template/).
   after_create: |
-    git clone 'git@github.com:cdcordobaa/symphony-workshop-kit.git' .
+    git clone 'https://github.com/cdcordobaa/symphony-workshop-kit.git' .
   before_run: |
     git status --short
   after_run: |
