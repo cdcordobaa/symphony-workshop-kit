@@ -16,8 +16,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node --import tsx src/index.ts",
     "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
     "smoke:config": "tsx smoke/config.ts ./WORKFLOW.md",
-    "smoke:observability": "tsx smoke/observability.ts"
+    "smoke:observability": "tsx smoke/observability.ts",
+    "smoke:tracker": "tsx smoke/tracker.ts"
   },
   "dependencies": {
     "liquidjs": "^10.21.0",
