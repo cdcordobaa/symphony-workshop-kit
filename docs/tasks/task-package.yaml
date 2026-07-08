@@ -1,0 +1,19 @@
+planningWave: symphony-mvp-walking-skeleton
+tasksDir: docs/tasks
+milestones:
+  - "M1: MVP Walking Skeleton"
+tasks:
+  - id: SYM-001
+    file: docs/tasks/SYM-001-project-init-and-domain-models.md
+  - id: SYM-002
+    file: docs/tasks/SYM-002-workflow-loader-and-config.md
+  - id: SYM-003
+    file: docs/tasks/SYM-003-observability-logging-and-status.md
+  - id: SYM-004
+    file: docs/tasks/SYM-004-notion-tracker-client.md
+  - id: SYM-005
+    file: docs/tasks/SYM-005-workspace-manager-and-safety.md
+  - id: SYM-006
+    file: docs/tasks/SYM-006-agent-runner-and-prompt.md
+  - id: SYM-007
+    file: docs/tasks/SYM-007-orchestrator-reconciliation-and-cli.md
