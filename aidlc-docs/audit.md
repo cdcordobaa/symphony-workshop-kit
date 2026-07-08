@@ -117,3 +117,11 @@
 **Context**: CONSTRUCTION → Build & Test. Notion Dev Board provisioned. Blocking on the exact target-repo URL for the driver clone hook.
 
 ---
+
+## Target Repo Resolved = THIS kit repo; Build Already Started (ARK-49)
+**Timestamp**: 2026-07-08T01:55:00Z
+**User Input**: "When I mean this, I mean this very same repository we are working from, right? I mean the complete AI DLC is here."
+**AI Response**: "Resolved: target repo = THIS repo (`cdcordobaa/symphony-workshop-kit`) — the product is built here alongside the plan, consistent with the plan's greenfield `src/`-at-root layout. Discovered the build already began: origin has branch `arkatechie/ark-49-sym-001-bootstrap-cli-and-config` with real scaffolding (package.json, tsconfig, src/domain/{types,interfaces}, src/config/*, src/prompt/renderer, src/index, test/*). Two drifts from our plan: (1) it uses `node --test` (node:test) + tsx, NOT the planned vitest; (2) no BUILD-CONTRACT.md / smoke:* scripts / verify. CLAUDE.md is unchanged on that branch (still the planning persona — a conflict for in-repo build agents). Updated build-driver/WORKFLOW.md hooks.after_create to clone `cdcordobaa/symphony-workshop-kit` (branch main). Flagged 3 reconciliation decisions to the user: harness (align to node:test vs enforce vitest), CLAUDE.md implementer clause, and base-branch (merge construction-run-2 → main)."
+**Context**: CONSTRUCTION → Build & Test. Target repo = self. Build partially begun; reconciliation of harness/persona/base-branch pending user decision.
+
+---

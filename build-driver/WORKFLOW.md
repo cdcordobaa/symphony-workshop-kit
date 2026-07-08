@@ -38,10 +38,12 @@ workspace:
   root: ~/symphony-workspaces
 
 hooks:
-  # Clone the TARGET repo (where the product is built) into each issue workspace.
-  # ← change the URL to your target repo if different.
+  # TARGET repo = THIS workshop-kit repo: the product is built here, alongside the
+  # plan (aidlc-docs/, docs/tasks/, build-driver/). Agents clone the base branch and
+  # PR back into it; merges unblock the next wave. The base branch MUST carry the plan,
+  # docs/tasks/, and BUILD-CONTRACT.md (merge construction-run-2 → main first).
   after_create: |
-    git clone --depth 1 https://github.com/cdcordobaa/symphony.git .
+    git clone --depth 1 --branch main https://github.com/cdcordobaa/symphony-workshop-kit.git .
 
 agent:
   max_concurrent_agents: 3  # keep low (experimental harness; see kit RUNBOOK Appendix C)
