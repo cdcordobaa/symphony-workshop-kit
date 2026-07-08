@@ -1,0 +1,52 @@
+{
+  "_provenance": {
+    "description": "REAL capture of the Symphony Dev Board via the connected claude.ai Notion MCP connector (tool: notion-query-data-sources, SQL mode). Not hand-authored. Used because a standalone test subprocess cannot perform the connector's OAuth flow; the integration test replays these live payloads through the real SqlNotionMcp parser + normalizer.",
+    "captured_at": "2026-07-08T21:00:00Z",
+    "database_id": "1c7826ea19e443b9addd794981606d56",
+    "data_source_url": "collection://c29d9c6a-0db6-4dcb-bb52-66a0ac769468",
+    "active_states": ["Todo", "In Progress"],
+    "terminal_states": ["Done", "Cancelled"]
+  },
+  "queryAll": {
+    "results": [
+      {
+        "id": "39750d30-8227-8127-a350-c6bc3dc2522d",
+        "url": "https://app.notion.com/39750d3082278127a350c6bc3dc2522d",
+        "createdTime": "2026-07-08 20:13:27Z",
+        "userDefined:ID": 2,
+        "Labels": null,
+        "Priority": 3,
+        "Status": "Done",
+        "Name": "Control: already Done (must be ignored)"
+      },
+      {
+        "id": "39750d30-8227-8137-a614-eacc34c33b7e",
+        "url": "https://app.notion.com/39750d3082278137a614eacc34c33b7e",
+        "createdTime": "2026-07-08 20:13:27Z",
+        "userDefined:ID": 1,
+        "Labels": "[\"demo\",\"walking-skeleton\"]",
+        "Priority": 1,
+        "Status": "Todo",
+        "Name": "Walking-skeleton smoke: self-complete"
+      }
+    ],
+    "has_more": false,
+    "data_source_ids": ["c29d9c6a-0db6-4dcb-bb52-66a0ac769468"]
+  },
+  "queryActive": {
+    "results": [
+      {
+        "id": "39750d30-8227-8137-a614-eacc34c33b7e",
+        "url": "https://app.notion.com/39750d3082278137a614eacc34c33b7e",
+        "createdTime": "2026-07-08 20:13:27Z",
+        "userDefined:ID": 1,
+        "Labels": "[\"demo\",\"walking-skeleton\"]",
+        "Priority": 1,
+        "Status": "Todo",
+        "Name": "Walking-skeleton smoke: self-complete"
+      }
+    ],
+    "has_more": false,
+    "data_source_ids": ["c29d9c6a-0db6-4dcb-bb52-66a0ac769468"]
+  }
+}
