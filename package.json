@@ -21,7 +21,9 @@
     "smoke:observability": "tsx smoke/observability.ts",
     "smoke:tracker": "tsx smoke/tracker.ts",
     "smoke:workspace": "tsx smoke/workspace.ts",
-    "smoke:agent": "tsx smoke/agent.ts"
+    "smoke:agent": "tsx smoke/agent.ts",
+    "smoke:e2e": "tsx smoke/e2e.ts",
+    "verify": "npm run build && npm test"
   },
   "dependencies": {
     "liquidjs": "^10.21.0",
