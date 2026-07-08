@@ -20,7 +20,8 @@
     "smoke:config": "tsx smoke/config.ts ./WORKFLOW.md",
     "smoke:observability": "tsx smoke/observability.ts",
     "smoke:tracker": "tsx smoke/tracker.ts",
-    "smoke:workspace": "tsx smoke/workspace.ts"
+    "smoke:workspace": "tsx smoke/workspace.ts",
+    "smoke:agent": "tsx smoke/agent.ts"
   },
   "dependencies": {
     "liquidjs": "^10.21.0",
