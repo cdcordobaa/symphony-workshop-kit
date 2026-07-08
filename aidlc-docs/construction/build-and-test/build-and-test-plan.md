@@ -133,13 +133,13 @@ Wave 3: SYM-006                     (agent runner, real Claude Code turn)
 Wave 4: SYM-007   ← MVP GATE        (orchestrator + CLI; REAL-Notion e2e green)
 ```
 
-> **MCP wiring (important):** symphony-claude auto-injects **only** the `linear_graphql` MCP tool
-> (Linear creds) into each agent workspace at `.claude/mcp-config.json`. The agents building
-> **SYM-004 / SYM-006 / SYM-007** additionally need **Notion MCP** for their required real-Notion
-> tests — provide it via a **`.mcp.json` at the target-repo root** (declaring the Notion MCP server,
-> referencing `${NOTION_API_KEY}`) plus `NOTION_API_KEY` exported in the shell that runs the driver
-> (spawned agents inherit it). The two MCP configs coexist because symphony-claude does **not** pass
-> `--strict-mcp-config`. Without this, their integration/e2e tests cannot pass (§6, §7).
+> **MCP wiring:** symphony-claude injects the `linear_graphql` MCP tool (Linear) into each agent, and
+> because it does **not** pass `--strict-mcp-config`, agents also load your **user-scope** MCP servers.
+> So the agents building **SYM-004 / SYM-006 / SYM-007** reach **Notion by default via your connected
+> `claude.ai Notion` connector — no API key required**. For unattended or fresh-machine runs, use the
+> reproducible fallback instead: a repo-root **`.mcp.json`** (local Notion server) + `NOTION_API_KEY`
+> in the driver shell (template: `build-driver/notion.mcp.json`). Either way a real Notion board is
+> required (§4). See `build-driver/` and §6.
 
 ### 5.2 DEFERRED (post-demo) — Dogfood capstone
 Once SYM-007 lands and `symphony ./WORKFLOW.md` runs, the recursion becomes possible: seed a tracker
@@ -157,10 +157,10 @@ contract must live where an agent will see it:
   real-Notion integration requirement for SYM-004/007.
 - Reference it from the target repo's `CLAUDE.md` / the `WORKFLOW.md` prompt body so every per-ticket
   agent loads it.
-- Add a **`.mcp.json`** at the target-repo root declaring the **Notion** MCP server (env
-  `${NOTION_API_KEY}`) so the agents that run the real-Notion tests (SYM-004/006/007) have it.
-  symphony-claude separately injects `linear_graphql` via `--mcp-config`; the two coexist (no
-  `--strict-mcp-config`). Export `NOTION_API_KEY` in the driver shell so agents inherit it.
+- **Notion access for agents** is by default your connected `claude.ai Notion` MCP connector (agents
+  inherit user-scope servers; symphony-claude passes no `--strict-mcp-config`). *Optional fallback*
+  for unattended/fresh machines: a repo-root **`.mcp.json`** running a local Notion server +
+  `NOTION_API_KEY` (template `build-driver/notion.mcp.json`). `linear_graphql` is injected separately.
 - Mirror the per-ticket DoD into each Linear issue description (or the SYM task files, then re-publish)
   so "done" means the same on the board and in code.
 
@@ -171,10 +171,10 @@ contract must live where an agent will see it:
 - [x] Verification substrate = **real Notion + MCP required** (unit tests mock; SYM-004/007 hit a live board) — B4/G3/G4.
 - [x] Orchestration = engine + Linear only; dogfood capstone deferred — B1/G5.
 - [ ] **Actions to execute (symphony-claude + Linear):**
-  - [ ] Stand up the **Notion "Symphony Dev Board"** + seed tickets; put `NOTION_API_KEY` in `.env` (§4). **Required.**
+  - [ ] Stand up the **Notion "Symphony Dev Board"** + seed tickets (§4). **Required** (real test substrate).
+  - [ ] Confirm agents can reach Notion: default = your connected `claude.ai Notion` connector; *optional* fallback = repo-root `.mcp.json` + `NOTION_API_KEY` (`build-driver/notion.mcp.json`).
   - [ ] Add harness + `BUILD-CONTRACT.md` + smoke-script stubs to **SYM-001** (edit ARK-49 / re-publish).
-  - [ ] Add a target-repo **`.mcp.json` (Notion)** so SYM-004/006/007 agents can run the real-Notion tests (§6); export `NOTION_API_KEY` in the driver shell.
   - [ ] Add the DoD + smoke line to **SYM-002…007**; give **SYM-004 + SYM-007** the required real-Notion integration/e2e criteria (+ Linear).
-  - [ ] Point **symphony-claude** at the backlog: a `WORKFLOW.md` with `tracker.project_slug: d27271e017ad` + `hooks.after_create` cloning the target repo (the bundled `../symphony-claude/WORKFLOW.md` already does both) — RUNBOOK §2.
-  - [ ] Start the driver: `npx symphony <WORKFLOW.md> --port 3000`; it claims ARK-49 (Wave 0) — RUNBOOK §2.
+  - [x] Driver config drafted: `build-driver/WORKFLOW.md` (Linear `d27271e017ad` + target-repo clone + per-ticket DoD prompt); optional `build-driver/notion.mcp.json`.
+  - [ ] Start the driver: `node ../symphony-claude/dist/index.js "$PWD/build-driver/WORKFLOW.md" --port 3000`; it claims ARK-49 (Wave 0) — RUNBOOK §2.
 - [ ] **Deferred (post-demo):** dogfood capstone (§5.2).

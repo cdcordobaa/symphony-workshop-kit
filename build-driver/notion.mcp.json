@@ -1,0 +1,14 @@
+{
+  "//": "OPTIONAL fallback — you only need this if the agents should NOT rely on your connected claude.ai Notion connector (e.g. unattended runs where an OAuth token could expire, or a fresh machine replicating the workshop). To enable: copy this file to the TARGET repo root as `.mcp.json` (or have the driver WORKFLOW.md `hooks.after_create` write it into the workspace after cloning), and export NOTION_API_KEY in the shell that runs symphony-claude. symphony-claude does NOT pass --strict-mcp-config, so this coexists with its injected linear_graphql server.",
+  "//env": "NOTION_API_KEY must be a Notion internal-integration token (starts with `ntn_`/`secret_`) that has been shared with the Symphony Dev Board. Claude Code expands ${NOTION_API_KEY} from the environment.",
+  "//package": "Exact server package/env may vary; `@notionhq/notion-mcp-server` documents the OPENAPI_MCP_HEADERS form below. Newer builds also accept NOTION_TOKEN. Verify against your installed server.",
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\":\"Bearer ${NOTION_API_KEY}\",\"Notion-Version\":\"2022-06-28\"}"
+      }
+    }
+  }
+}

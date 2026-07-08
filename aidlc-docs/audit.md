@@ -101,3 +101,11 @@
 **Context**: CONSTRUCTION → Build & Test. Build driver = symphony-claude + Linear (OpenSymphony retained as documented alternative). Notion MCP for the product's tests wired via target-repo .mcp.json.
 
 ---
+
+## Driver Config Drafted + Notion API Key Clarified (optional, not required)
+**Timestamp**: 2026-07-08T01:20:00Z
+**User Input**: "Draft the driver WORKFLOW.md and target-repo .mcp.json, Also why do we need an ocean ABI key if we already have the MCP installed globally or in the claude"
+**AI Response**: "Drafted `build-driver/WORKFLOW.md` (symphony-claude driver config: Linear project d27271e017ad, active [Todo, In Progress, Merging] / terminal [Done, Canceled, Cancelled, Duplicate], target-repo clone hook, per-ticket prompt wiring BUILD-CONTRACT.md + Definition of Done + status map), `build-driver/notion.mcp.json` (optional local Notion MCP server fallback), and `build-driver/README.md`. Answered the Notion-API-key question with evidence from `claude mcp list`: the user already has `claude.ai Notion` (https://mcp.notion.com/mcp) connected via OAuth at CLI/user scope. Since symphony-claude injects linear_graphql WITHOUT --strict-mcp-config, spawned agents also load user-scope servers → they reach Notion via the connector with NO API key. The NOTION_API_KEY + local-server `.mcp.json` is only a reproducibility/robustness fallback (unattended runs where OAuth could expire, or fresh machines). Updated plan (§5.1 MCP note, §6, §7), RUNBOOK (2A.2/2A.3/2A.4), and aidlc-state to mark the key OPTIONAL and point at build-driver/. A real Notion Dev Board is still required as the test substrate regardless."
+**Context**: CONSTRUCTION → Build & Test. Driver config authored; Notion key demoted to optional fallback (connector is the default path).
+
+---

@@ -203,29 +203,26 @@ Done (Phase 1.5). Pick one:
 cd ../symphony-claude && npm install && npm run build && cd -
 ```
 
-**2A.2 Create a driver `WORKFLOW.md`.** This configures the *build* and is **distinct** from the
-product's own `WORKFLOW.md` (which the product loads to poll its own tracker). Copy
-`../symphony-claude/WORKFLOW.md` and set:
-- `tracker.project_slug` → your Linear project slug (this run: `d27271e017ad`).
-- `tracker.active_states` / `terminal_states` → match your Linear workflow (e.g. active
-  `Todo, In Progress, Rework`; terminal `Done, Canceled, Duplicate`).
-- `hooks.after_create` → clone your target repo, e.g. `git clone <SYMPHONY_TARGET_REPO_URL> .`.
-- Prompt body → tell the agent to read `BUILD-CONTRACT.md` and satisfy the per-ticket DoD
-  (build + tests + smoke) before moving the ticket to review.
+**2A.2 Use the driver `WORKFLOW.md`.** This kit ships a ready-made one at **`build-driver/WORKFLOW.md`**
+(Linear project `d27271e017ad`, active/terminal states, target-repo clone hook, and a per-ticket prompt
+that wires `BUILD-CONTRACT.md` + the Definition of Done). It is **distinct** from the product's own
+`WORKFLOW.md` (which the product loads to poll Notion). Edit the `hooks.after_create` clone URL to your
+target repo; adjust the slug/states only if yours differ.
 
-**2A.3 Give agents the product's integration creds (if a ticket's tests hit a real service).**
-symphony-claude auto-injects **only** the `linear_graphql` MCP tool. If a ticket's required tests need
-another service (this run: **Notion**), add a **`.mcp.json` at the target-repo root** declaring that
-MCP server (referencing `${NOTION_API_KEY}`), and export the key in the driver shell:
+**2A.3 Notion access for the agents.** The SYM-004/006/007 tickets' tests hit a real Notion board. By
+**default** the agents inherit your connected `claude.ai Notion` MCP connector (`claude mcp list` shows
+it) — symphony-claude injects `linear_graphql` and does **not** pass `--strict-mcp-config`, so
+user-scope servers still load. **No key needed.** For unattended runs or a fresh machine, use the
+*fallback*: copy `build-driver/notion.mcp.json` to the target-repo root as `.mcp.json` and export a
+`NOTION_API_KEY`.
 ```bash
-set -a; . ./.env; set +a          # LINEAR_API_KEY + NOTION_API_KEY present; `claude` authenticated
+set -a; . ./.env; set +a          # LINEAR_API_KEY always; NOTION_API_KEY only for the fallback; `claude` authenticated
 ```
-The two MCP configs coexist (symphony-claude does not pass `--strict-mcp-config`).
 
 **2A.4 Run**
 ```bash
-node ../symphony-claude/dist/index.js /path/to/driver-WORKFLOW.md --port 3000
-# (equivalently `npx symphony ...` if the bin is linked)
+cd ../symphony-claude && npm install && npm run build && cd -   # once
+node ../symphony-claude/dist/index.js "$PWD/build-driver/WORKFLOW.md" --port 3000
 ```
 
 **2A.5 Watch**
