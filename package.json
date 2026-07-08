@@ -19,7 +19,8 @@
     "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
     "smoke:config": "tsx smoke/config.ts ./WORKFLOW.md",
     "smoke:observability": "tsx smoke/observability.ts",
-    "smoke:tracker": "tsx smoke/tracker.ts"
+    "smoke:tracker": "tsx smoke/tracker.ts",
+    "smoke:workspace": "tsx smoke/workspace.ts"
   },
   "dependencies": {
     "liquidjs": "^10.21.0",
