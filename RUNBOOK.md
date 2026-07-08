@@ -143,6 +143,40 @@ This writes `docs/tasks/linear-publish.yaml` (the id→issue mapping).
 
 ---
 
+## Phase 1.5 — Define the build & test approach (CONSTRUCTION planning)
+
+Before handing the backlog to the engine, decide **how each ticket proves it produced a working
+increment**. This is a short planning pass (still in the kit, with Claude) that closes the gap between
+"a ticket is coded" and "we know the product still works." Output:
+`aidlc-docs/construction/build-and-test/build-and-test-plan.md`.
+
+Decide and record four things:
+
+1. **Build orchestrator.** Who drives ticket-by-ticket construction. For a demo, the simplest and most
+   reliable choice is **engine + Linear only**: the OpenSymphony engine claims Linear tickets and a
+   Claude Code agent implements each one (Phase 2 below). *(A later, optional "dogfood" step can point
+   the finished product at its own tracker to build its next iteration — keep it deferred until the MVP
+   gate is green.)*
+2. **Per-ticket Definition of Done ("working at each step").** Pin one shared script contract in the
+   first ticket (e.g. `npm run build`, `npm test`, `npm run smoke:<unit>`, `npm run verify`). Every
+   ticket must go **build green → unit tests green → a runnable smoke that shows the unit doing its real
+   job** before it moves to review. "Done" then means a *verified, runnable* increment — and because the
+   engine only unblocks dependents when a blocker is done, quality gates the whole wave graph.
+3. **Test substrate.** For a demo you usually **mock the product's external tracker** (e.g. a mocked
+   Notion MCP) so the walking skeleton runs with no live external board; the end-to-end run in the last
+   ticket uses an in-memory fixture. Swapping the mock for the real integration is the first post-demo
+   step. Record it as deferred so it is not lost.
+4. **Agent-facing build contract.** The engine's agents read the **target repo**, not `aidlc-docs/`.
+   So put the script contract + per-ticket DoD in a **`BUILD-CONTRACT.md` at the target repo root**
+   (created by the first ticket) and reference it from the target repo's `CLAUDE.md` / `WORKFLOW.md`
+   prompt, and mirror the DoD into each Linear issue so "done" means the same on the board and in code.
+
+> ✅ Checkpoint: `build-and-test-plan.md` exists with those four decisions; the first ticket
+> (SYM-001) carries the harness + `BUILD-CONTRACT.md`; every ticket's acceptance list includes the
+> build/test/smoke DoD. Tag a reference point (Appendix E) before starting the engine.
+
+---
+
 ## Phase 2 — Implementing (OpenSymphony engine)
 
 Now hand the backlog to the engine. Full detail in `engine/engine-setup.md`; the short path:
@@ -256,3 +290,38 @@ Begin a brand-new run while preserving the previous one. This is the path that p
   `apply` updates rather than duplicates.
 - **Re-implement a ticket:** move the Linear issue back to `Todo`; the engine re-claims it. Delete
   its workspace under `~/.opensymphony/workspaces/<ISSUE>/` for a clean clone.
+
+## Appendix E — Reference points (branches & tags)
+
+Keep return points so you can compare runs, restart cleanly, or demo from a known state.
+
+### E.1 Branch strategy (one branch per lifecycle phase, per run)
+- `archive/inception-run-<N>` — a **frozen** snapshot of a completed run (source + plans + any build).
+  Push it (`git push -u origin archive/inception-run-<N>`) so it survives locally-lost work.
+- `inception-run-<N>` — the finalized INCEPTION artifacts for run N (requirements, unit-of-work,
+  task package). Frozen once CONSTRUCTION planning starts.
+- `construction-run-<N>` — branched from `inception-run-<N>`; where the build & test definition
+  (Phase 1.5) and any construction-side docs live while the engine implements tickets.
+
+### E.2 Tag a reference point before consequential steps
+Annotated tags mark states you may want to `git checkout` back to:
+
+```bash
+git tag -a run-<N>-construction-baseline -m "Run N: MVP backlog published + build/test plan defined"
+git push origin run-<N>-construction-baseline        # optional: share it
+```
+
+Suggested reference tags per run:
+
+| Tag | Marks |
+|---|---|
+| `run-<N>-inception-complete` | INCEPTION artifacts finalized (backlog not yet published). |
+| `run-<N>-construction-baseline` | Backlog live in Linear **+** build-and-test plan defined — the point just before the engine starts. |
+| `run-<N>-mvp-gate` | The MVP walking skeleton is green (last ticket done). |
+
+Return to one with `git checkout <tag>` (detached HEAD — branch from it if you want to continue:
+`git switch -c <new-branch> <tag>`). List them with `git tag -l 'run-*'`.
+
+### E.3 Per-milestone tags during implementation (optional)
+As waves land, tag the merge points (e.g. `run-<N>-wave-2-done`) so a long build has coarse
+checkpoints independent of Linear/engine state.

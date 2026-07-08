@@ -41,15 +41,15 @@
 > In this workshop, CONSTRUCTION is executed by the **OpenSymphony engine** driving Claude agents
 > per Linear ticket — not by the planning AI. Track per-ticket status in Linear, not here.
 - [x] Build & Test definition — `construction/build-and-test/build-and-test-plan.md` (branch `construction-run-2`).
-  Decisions: **B1** hybrid orchestration (engine builds waves 0–4 off Linear → finished product
-  dogfoods its Phase-2 completion); **B2** per-ticket DoD = build+unit-tests green + a smoke that
-  shows the unit's real job, real-Notion e2e at SYM-007 = MVP gate; **B3** harness = vitest + tsc
-  (pinned in SYM-001); **B4** Notion "Symphony Dev Board" + Notion MCP wired for orchestrator (read)
-  and agent (writes).
+  Decisions (demo posture — drive everything from OpenSymphony + Linear): **B1** engine + Linear only
+  (engine builds all 7 units, waves 0–4; dogfood capstone DEFERRED); **B2** per-ticket DoD =
+  build+unit-tests green + a smoke that shows the unit's real job, fixture e2e at SYM-007 = MVP gate;
+  **B3** harness = vitest + tsc (pinned in SYM-001); **B4** mocked Notion MCP for the demo (real Notion
+  "Symphony Dev Board" + live MCP wiring DEFERRED). Reference tag: `run-2-construction-baseline`.
 
 ## Current Status
 
 - **Lifecycle phase**: CONSTRUCTION — Build & Test defined; ready to wire tickets + start the engine
-- **Current stage**: Build & Test plan approved on branch `construction-run-2`; execution actions pending approval (see plan §7)
-- **Next stage**: (1) fold harness + `BUILD-CONTRACT.md` + per-ticket DoD/smoke into SYM-001…007 (+ Linear); (2) stand up the Notion Dev Board + `NOTION_API_KEY`; (3) start the engine on ARK-49 (Wave 0)
-- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach is defined in `construction/build-and-test/build-and-test-plan.md`. Per the kit boundary, per-unit implementation is done by the engine driving Claude Code agents per ticket — tracked in Linear, not here.
+- **Current stage**: Build & Test plan approved on branch `construction-run-2` (engine + Linear demo path); execution actions pending (see plan §7)
+- **Next stage**: (1) fold harness + `BUILD-CONTRACT.md` + per-ticket DoD/smoke into SYM-001…007 (+ Linear); (2) wire `engine/WORKFLOW.md` (project slug + target-repo URL); (3) start the engine on ARK-49 (Wave 0)
+- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach defined in `construction/build-and-test/build-and-test-plan.md`; the demo drives implementation **only from OpenSymphony + Linear** (mocked Notion; real board + dogfood deferred). Per the kit boundary, per-unit implementation is done by the engine driving Claude Code agents per ticket — tracked in Linear, not here.

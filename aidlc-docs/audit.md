@@ -77,3 +77,11 @@
 **Context**: Transition INCEPTION → CONSTRUCTION planning. Committing artifacts, creating build branch, defining build+test approach.
 
 ---
+
+## Build & Test Definition — Decisions + Demo Simplification
+**Timestamp**: 2026-07-08T00:30:00Z
+**User Input**: "Okay I think that for now because I need to demo this, let's drive all the implementation only from open Symphony and Linear. Let's create a git tag or something that I can get back to later as reference points in the implementation of this. Do and remember to update the RUNBOOK with everything we do along the process so others can replicate this workshop."
+**AI Response**: "Recorded build-and-test decisions on branch `construction-run-2` (B1 engine+Linear only for the demo — dogfood capstone DEFERRED; B2 per-ticket DoD = build+unit-tests green + smoke; B3 vitest+tsc pinned in SYM-001; B4 mocked Notion for the demo — real Notion Dev Board + MCP wiring DEFERRED). Revised `build-and-test-plan.md` to the engine+Linear demo posture, keeping the deferred Notion substrate (§4) and dogfood capstone (§5.2) verbatim as reference points. Created annotated git tag `run-2-construction-baseline` at the plan commit as a return point. Extended `RUNBOOK.md` with a CONSTRUCTION build-and-test section, per-ticket DoD/smoke convention, the engine+Linear demo drive, and a reference-point/tagging appendix so the workshop is replicable."
+**Context**: CONSTRUCTION → Build & Test. Demo posture: implementation driven only from OpenSymphony + Linear. Deferred items paused, not dropped.
+
+---
