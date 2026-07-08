@@ -41,8 +41,10 @@
 > In this workshop, CONSTRUCTION is executed by the **OpenSymphony engine** driving Claude agents
 > per Linear ticket — not by the planning AI. Track per-ticket status in Linear, not here.
 - [x] Build & Test definition — `construction/build-and-test/build-and-test-plan.md` (branch `construction-run-2`).
-  Decisions: **B1** implementation driven by engine + Linear only (engine builds all 7 units, waves
-  0–4; dogfood capstone DEFERRED); **B2** per-ticket DoD = build+unit-tests green + a smoke that shows
+  Decisions: **B1** implementation driven by **symphony-claude ("Symphony Cloud") + Linear** (TS
+  Symphony reimpl at `../symphony-claude`, polls Linear + launches Claude Code per ticket; replaces the
+  Rust OpenSymphony engine which is not cloud-ready). Builds all 7 units, waves 0–4; dogfood capstone
+  DEFERRED. **B2** per-ticket DoD = build+unit-tests green + a smoke that shows
   the unit's real job, **real-Notion e2e at SYM-007 = MVP gate**; **B3** harness = vitest + tsc (pinned
   in SYM-001); **B4** **real Notion + MCP is REQUIRED for verification** (unit tests mock for speed, but
   SYM-004 + SYM-007 carry required integration/e2e tests against a live Notion "Symphony Dev Board" —
@@ -52,5 +54,5 @@
 
 - **Lifecycle phase**: CONSTRUCTION — Build & Test defined; ready to wire tickets + start the engine
 - **Current stage**: Build & Test plan approved on branch `construction-run-2` (engine + Linear demo path); execution actions pending (see plan §7)
-- **Next stage**: (1) stand up the **Notion "Symphony Dev Board"** + seed tickets + `NOTION_API_KEY` (required for SYM-004/007 verification); (2) fold harness + `BUILD-CONTRACT.md` + per-ticket DoD/smoke into SYM-001…007 (+ Linear); (3) wire `engine/WORKFLOW.md` (project slug + target-repo URL) + give SYM-004/006/007 agents Notion MCP; (4) start the engine on ARK-49 (Wave 0)
-- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach defined in `construction/build-and-test/build-and-test-plan.md`: implementation is driven **only from OpenSymphony + Linear**, but **verification is against a real Notion board via MCP** (SYM-004/007 — required, not deferred). Only the dogfood capstone is deferred. Per the kit boundary, per-unit implementation is done by the engine driving Claude Code agents per ticket — tracked in Linear, not here.
+- **Next stage**: (1) stand up the **Notion "Symphony Dev Board"** + seed tickets + `NOTION_API_KEY` (required for SYM-004/007 verification); (2) fold harness + `BUILD-CONTRACT.md` + per-ticket DoD/smoke into SYM-001…007 (+ Linear); (3) point **symphony-claude** at the backlog (driver `WORKFLOW.md`: `project_slug: d27271e017ad` + `after_create` clone) and add a target-repo `.mcp.json` (Notion) so SYM-004/006/007 agents get Notion MCP; (4) start the driver (`npx symphony <WORKFLOW.md> --port 3000`) on ARK-49 (Wave 0)
+- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach defined in `construction/build-and-test/build-and-test-plan.md`: implementation is driven **only from OpenSymphony + Linear**, but **verification is against a real Notion board via MCP** (SYM-004/007 — required, not deferred). Only the dogfood capstone is deferred. Per the kit boundary, per-unit implementation is done by **symphony-claude ("Symphony Cloud")** driving Claude Code agents per Linear ticket — tracked in Linear, not here.

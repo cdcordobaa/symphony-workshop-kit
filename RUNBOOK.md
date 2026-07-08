@@ -1,8 +1,8 @@
 # Symphony Workshop — Runbook
 
-Build a Symphony-spec orchestrator **from scratch**, planning with **AI-DLC** and executing with the
-**OpenSymphony** engine. Follow these steps top to bottom. Two phases: **Planning** then
-**Implementing**.
+Build a Symphony-spec orchestrator **from scratch**, planning with **AI-DLC** and executing with a
+**Symphony driver** — `symphony-claude` (TypeScript, the current default) or the **OpenSymphony**
+engine (Rust). Follow these steps top to bottom. Two phases: **Planning** then **Implementing**.
 
 - ⏱ Rough timing: Setup ~20 min · Phase 1 ~60–90 min · Phase 2 runs unattended (watch & review).
 - 🎯 Goal of Phase 1: a Linear project full of well-scoped, dependency-linked tickets derived from
@@ -18,8 +18,9 @@ Build a Symphony-spec orchestrator **from scratch**, planning with **AI-DLC** an
 
 ### 0.1 Accounts, keys, tools
 Work through `facilitator/preflight-checklist.md`. You need: a Linear workspace + API key, the
-`claude` CLI authenticated, `python3` + `uv`, `git`, `gh` authenticated, and a local OpenSymphony
-engine checkout (Rust). See `engine/engine-setup.md`.
+`claude` CLI authenticated, `python3` + `uv`, `git`, `gh` authenticated, and a **Symphony driver**:
+either `symphony-claude` (Node 22+, built locally at `../symphony-claude` — see Phase 2A) or a local
+OpenSymphony engine checkout (Rust, `engine/engine-setup.md` — Phase 2B).
 
 ### 0.2 Environment
 ```bash
@@ -184,40 +185,72 @@ Decide and record four things:
 
 ---
 
-## Phase 2 — Implementing (OpenSymphony engine)
+## Phase 2 — Implementing (Symphony driver)
 
-Now hand the backlog to the engine. Full detail in `engine/engine-setup.md`; the short path:
+Hand the Linear backlog to a **driver** that polls Linear and launches a Claude Code agent per ticket.
+The driver is pluggable — both consume the same Linear project and the same per-ticket Definition of
+Done (Phase 1.5). Pick one:
 
-### 2.1 Wire the engine
-Edit `engine/WORKFLOW.md`:
-- `tracker.project_slug` → `$SYMPHONY_LINEAR_PROJECT_SLUG`.
-- `hooks.after_create` clone URL → `$SYMPHONY_TARGET_REPO_URL`.
+- **2A. symphony-claude ("Symphony Cloud")** — a TypeScript reimplementation of Symphony at
+  `../symphony-claude` (`npx symphony`). **Use this when the Rust OpenSymphony engine isn't available.**
+  ← current default for this run.
+- **2B. OpenSymphony engine (Rust)** — the original bundled in `engine/`. See §2B.
 
-Leave the `claude:` block as-is (its presence selects the experimental Claude harness).
+### 2A — Drive with symphony-claude
 
-### 2.2 Export env in the engine shell
+**2A.1 Build the driver once**
 ```bash
-set -a; . ./.env; set +a    # LINEAR_API_KEY + ANTHROPIC_API_KEY must be present
+cd ../symphony-claude && npm install && npm run build && cd -
 ```
 
-### 2.3 Preflight + run
+**2A.2 Create a driver `WORKFLOW.md`.** This configures the *build* and is **distinct** from the
+product's own `WORKFLOW.md` (which the product loads to poll its own tracker). Copy
+`../symphony-claude/WORKFLOW.md` and set:
+- `tracker.project_slug` → your Linear project slug (this run: `d27271e017ad`).
+- `tracker.active_states` / `terminal_states` → match your Linear workflow (e.g. active
+  `Todo, In Progress, Rework`; terminal `Done, Canceled, Duplicate`).
+- `hooks.after_create` → clone your target repo, e.g. `git clone <SYMPHONY_TARGET_REPO_URL> .`.
+- Prompt body → tell the agent to read `BUILD-CONTRACT.md` and satisfy the per-ticket DoD
+  (build + tests + smoke) before moving the ticket to review.
+
+**2A.3 Give agents the product's integration creds (if a ticket's tests hit a real service).**
+symphony-claude auto-injects **only** the `linear_graphql` MCP tool. If a ticket's required tests need
+another service (this run: **Notion**), add a **`.mcp.json` at the target-repo root** declaring that
+MCP server (referencing `${NOTION_API_KEY}`), and export the key in the driver shell:
 ```bash
-opensymphony doctor --config "$PWD/engine/config.yaml"
-cd engine && opensymphony run --config "$PWD/config.yaml"
+set -a; . ./.env; set +a          # LINEAR_API_KEY + NOTION_API_KEY present; `claude` authenticated
 ```
-(`run` reads `WORKFLOW.md` from the working directory — run it from `engine/`.)
+The two MCP configs coexist (symphony-claude does not pass `--strict-mcp-config`).
 
-### 2.4 Watch
-- Control plane: `http://127.0.0.1:2468/`
-- TUI: `opensymphony tui --url http://127.0.0.1:2468`
-- The engine claims `Todo` issues (up to `max_concurrent_agents`), clones your repo into
-  `~/.opensymphony/workspaces/<ISSUE>/`, and runs a Claude agent there. Each agent moves the issue
-  to `In Progress`, keeps a `## Agent Harness Workpad` comment, opens a PR, attaches it, and moves
-  the issue to `Human Review`. Blocked issues wait for their blockers.
+**2A.4 Run**
+```bash
+node ../symphony-claude/dist/index.js /path/to/driver-WORKFLOW.md --port 3000
+# (equivalently `npx symphony ...` if the bin is linked)
+```
 
-### 2.5 Review & merge
-Review PRs as they arrive. Move approved issues to `Merging` (the agent then follows the `land`
-skill). As blockers merge, dependents unblock and get picked up.
+**2A.5 Watch**
+- **TUI**: full-screen dashboard on the TTY (running agents, turns, tokens, retry queue).
+- **Web**: `http://localhost:3000/` (`GET /api/v1/state`, per-issue detail, `POST /api/v1/refresh`).
+- **Linear**: each agent keeps a `## Workpad` comment with its live plan.
+The driver claims active-state issues (up to `max_concurrent_agents`), clones the target repo into
+`workspace.root/<ISSUE>/`, runs a multi-turn Claude session there, opens a PR, and moves the issue
+toward a terminal state. Blocked issues wait for their blockers.
+
+**2A.6 Review & merge** — review PRs as they arrive; advance approved issues per your Status Map. As
+blockers merge, dependents unblock and get claimed.
+
+### 2B — Drive with the OpenSymphony engine (Rust, alternative)
+
+Full detail in `engine/engine-setup.md`; the short path:
+
+1. **Wire the engine** — edit `engine/WORKFLOW.md`: `tracker.project_slug` →
+   `$SYMPHONY_LINEAR_PROJECT_SLUG`; `hooks.after_create` clone URL → `$SYMPHONY_TARGET_REPO_URL`.
+   Leave the `claude:` block as-is (selects the experimental Claude harness).
+2. **Export env** — `set -a; . ./.env; set +a` (LINEAR_API_KEY + ANTHROPIC_API_KEY).
+3. **Preflight + run** — `opensymphony doctor --config "$PWD/engine/config.yaml"`, then
+   `cd engine && opensymphony run --config "$PWD/config.yaml"` (reads `WORKFLOW.md` from cwd).
+4. **Watch** — control plane `http://127.0.0.1:2468/`; `opensymphony tui --url http://127.0.0.1:2468`.
+5. **Review & merge** — move approved issues to `Merging` (agent follows the `land` skill).
 
 > ✅ Done when the backlog has been implemented as merged PRs and your target repo is a working
 > Symphony implementation.
@@ -244,10 +277,12 @@ Full rules: `.agents/skills/aidlc-to-tasks/SKILL.md`.
 | `viewer.graphql` returns auth error | `LINEAR_API_KEY` not set/exported in the current shell. |
 | `validate` fails on cycles | Break the cyclic `blockedBy` edge the converter names; re-validate. |
 | `apply` says milestone mismatch | A task's `milestone:` doesn't exactly match a `milestones:` entry. |
-| Engine never claims an issue | Issue state not in `active_states`, or wrong `project_slug`. |
-| `after_create` clone fails | Bad `SYMPHONY_TARGET_REPO_URL` or `gh auth`/SSH not set up. |
-| Agent can't write Linear | `LINEAR_API_KEY` missing in the **engine** shell. |
-| Run stuck/failing | `/debug <ISSUE-ID>`; inspect `~/.opensymphony/workspaces/<ISSUE>/.opensymphony/claude/stdout.ndjson`. |
+| Driver never claims an issue | Issue state not in `active_states`, or wrong `project_slug`. |
+| `after_create` clone fails | Bad clone URL / `SYMPHONY_TARGET_REPO_URL` or `gh auth`/SSH not set up. |
+| Agent can't write Linear | `LINEAR_API_KEY` missing in the **driver** shell. |
+| Agent can't reach Notion (product tests fail) | Target-repo `.mcp.json` missing the Notion server, or `NOTION_API_KEY` not exported in the driver shell (Phase 2A.3). |
+| Run stuck/failing (OpenSymphony) | `/debug <ISSUE-ID>`; inspect `~/.opensymphony/workspaces/<ISSUE>/.opensymphony/claude/stdout.ndjson`. |
+| Run stuck/failing (symphony-claude) | Check the TUI/`symphony.log`, the web dashboard at `:3000`, and the workspace under `workspace.root/<ISSUE>/`. |
 
 ## Appendix C — Experimental harness caveats
 

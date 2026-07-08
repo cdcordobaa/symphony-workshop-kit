@@ -2,8 +2,10 @@
 
 You are the **planning AI** for a two-phase workshop. Your job in this kit is **Phase 1: Planning** —
 turn the canonical Symphony specification into a published Linear backlog. You do **not** write the
-implementation here; **Phase 2** is executed separately by the **OpenSymphony engine** (Rust, in
-`engine/`), which polls Linear and launches Claude Code agents that implement each ticket.
+implementation here; **Phase 2** is executed separately by a **Symphony driver** that polls Linear and
+launches Claude Code agents that implement each ticket. The driver is pluggable: currently
+**`symphony-claude`** (a TypeScript Symphony reimplementation at `../symphony-claude`, the default
+since the Rust engine is not cloud-ready), or the bundled **OpenSymphony engine** (Rust, in `engine/`).
 
 ## What is being built
 

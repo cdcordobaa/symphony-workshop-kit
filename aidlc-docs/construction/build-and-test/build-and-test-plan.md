@@ -10,14 +10,14 @@
 
 | # | Decision | Choice |
 |---|----------|--------|
-| B1 | **Build orchestrator** | **Engine + Linear only.** The OpenSymphony engine drives all 7 units (waves 0–4) off Linear; a Claude Code agent implements each ticket. *The dogfood capstone (product orchestrates its own Phase-2 completion) is **DEFERRED** — see §5.2.* |
+| B1 | **Build orchestrator** | **symphony-claude ("Symphony Cloud") + Linear.** The `symphony-claude` orchestrator (a TypeScript reimplementation of Symphony at `../symphony-claude`) polls **Linear** and launches a Claude Code CLI agent per ticket — replacing the Rust OpenSymphony engine (not cloud-ready). Drives all 7 units (waves 0–4). *The dogfood capstone (product orchestrates its own Phase-2 completion) is **DEFERRED** — see §5.2.* |
 | B2 | **Per-step verification** | **Build + unit tests green + a per-ticket smoke** that shows the unit doing its real job; a real-Notion end-to-end run at SYM-007 = the MVP gate. |
 | B3 | **Test harness (G1)** | **vitest** for unit + integration; `tsc` for build. Pinned in SYM-001 so every ticket shares one contract. |
 | B4 | **Integration substrate (G3/G4)** | **Real Notion + MCP is REQUIRED for verification** — the product's value *is* the Notion connection, so we prove it against a live board. Unit tests mock Notion for speed/determinism; **SYM-004 and SYM-007 additionally carry required integration/e2e tests that hit a real Notion "Symphony Dev Board" via MCP.** Not deferred. |
 
 > **Two separate axes — don't conflate them:**
-> - *Implementation* is driven entirely from **OpenSymphony + Linear** (the engine builds every unit;
->   there is **no** product-drives-itself/dogfood step — that stays deferred, §5.2).
+> - *Implementation* is driven entirely from **symphony-claude (Symphony Cloud) + Linear** (the driver
+>   builds every unit; there is **no** product-drives-itself/dogfood step — that stays deferred, §5.2).
 > - *Verification* is **not** mock-only. Because a Symphony orchestrator that can't actually read/drive
 >   its tracker is not a working product, the MVP gate is proven against a **real Notion board via MCP**
 >   (§4, required). Only the dogfood capstone is paused.
@@ -118,9 +118,10 @@ A Notion database with the properties the tracker normalizer expects:
 
 ## 5. Build orchestration
 
-### 5.1 Engine builds the MVP off Linear (waves 0→4) — B1
-The **OpenSymphony engine** (`engine/`) polls Linear (M1, ARK-49…55) and launches a Claude Code agent
-per ticket, in a workspace clone of the target repo. Per ticket the agent implements the unit, runs
+### 5.1 symphony-claude builds the MVP off Linear (waves 0→4) — B1
+The **symphony-claude** orchestrator (`../symphony-claude`, run as `npx symphony <WORKFLOW.md> --port
+3000`) polls Linear (M1, ARK-49…55) and launches a Claude Code CLI agent per ticket, in a workspace
+clone of the target repo (via `hooks.after_create`). Per ticket the agent implements the unit, runs
 `npm run verify` + the unit's smoke (§3), pastes evidence into the ticket, opens a PR, and moves the
 issue to review — which unblocks the next wave via the existing blocker relations:
 
@@ -132,9 +133,13 @@ Wave 3: SYM-006                     (agent runner, real Claude Code turn)
 Wave 4: SYM-007   ← MVP GATE        (orchestrator + CLI; REAL-Notion e2e green)
 ```
 
-> The agents building **SYM-004** and **SYM-007** (and SYM-006) must be given `NOTION_API_KEY` +
-> Notion MCP (and agent creds) **in their workspace**, or their required integration/e2e tests cannot
-> pass. This is an engine-wiring prerequisite (§7), not an optional extra.
+> **MCP wiring (important):** symphony-claude auto-injects **only** the `linear_graphql` MCP tool
+> (Linear creds) into each agent workspace at `.claude/mcp-config.json`. The agents building
+> **SYM-004 / SYM-006 / SYM-007** additionally need **Notion MCP** for their required real-Notion
+> tests — provide it via a **`.mcp.json` at the target-repo root** (declaring the Notion MCP server,
+> referencing `${NOTION_API_KEY}`) plus `NOTION_API_KEY` exported in the shell that runs the driver
+> (spawned agents inherit it). The two MCP configs coexist because symphony-claude does **not** pass
+> `--strict-mcp-config`. Without this, their integration/e2e tests cannot pass (§6, §7).
 
 ### 5.2 DEFERRED (post-demo) — Dogfood capstone
 Once SYM-007 lands and `symphony ./WORKFLOW.md` runs, the recursion becomes possible: seed a tracker
@@ -152,6 +157,10 @@ contract must live where an agent will see it:
   real-Notion integration requirement for SYM-004/007.
 - Reference it from the target repo's `CLAUDE.md` / the `WORKFLOW.md` prompt body so every per-ticket
   agent loads it.
+- Add a **`.mcp.json`** at the target-repo root declaring the **Notion** MCP server (env
+  `${NOTION_API_KEY}`) so the agents that run the real-Notion tests (SYM-004/006/007) have it.
+  symphony-claude separately injects `linear_graphql` via `--mcp-config`; the two coexist (no
+  `--strict-mcp-config`). Export `NOTION_API_KEY` in the driver shell so agents inherit it.
 - Mirror the per-ticket DoD into each Linear issue description (or the SYM task files, then re-publish)
   so "done" means the same on the board and in code.
 
@@ -161,11 +170,11 @@ contract must live where an agent will see it:
 - [x] Per-ticket DoD + smoke matrix defined — B2/G2.
 - [x] Verification substrate = **real Notion + MCP required** (unit tests mock; SYM-004/007 hit a live board) — B4/G3/G4.
 - [x] Orchestration = engine + Linear only; dogfood capstone deferred — B1/G5.
-- [ ] **Actions to execute (engine + Linear):**
+- [ ] **Actions to execute (symphony-claude + Linear):**
   - [ ] Stand up the **Notion "Symphony Dev Board"** + seed tickets; put `NOTION_API_KEY` in `.env` (§4). **Required.**
   - [ ] Add harness + `BUILD-CONTRACT.md` + smoke-script stubs to **SYM-001** (edit ARK-49 / re-publish).
+  - [ ] Add a target-repo **`.mcp.json` (Notion)** so SYM-004/006/007 agents can run the real-Notion tests (§6); export `NOTION_API_KEY` in the driver shell.
   - [ ] Add the DoD + smoke line to **SYM-002…007**; give **SYM-004 + SYM-007** the required real-Notion integration/e2e criteria (+ Linear).
-  - [ ] Ensure the engine gives the **SYM-004 / SYM-006 / SYM-007** agents `NOTION_API_KEY` + Notion MCP (and agent creds) in their workspace.
-  - [ ] Wire the engine (`engine/WORKFLOW.md`: project slug + target-repo clone URL) — RUNBOOK §2.1.
-  - [ ] Start the engine on ARK-49 (Wave 0) — RUNBOOK §2.3.
+  - [ ] Point **symphony-claude** at the backlog: a `WORKFLOW.md` with `tracker.project_slug: d27271e017ad` + `hooks.after_create` cloning the target repo (the bundled `../symphony-claude/WORKFLOW.md` already does both) — RUNBOOK §2.
+  - [ ] Start the driver: `npx symphony <WORKFLOW.md> --port 3000`; it claims ARK-49 (Wave 0) — RUNBOOK §2.
 - [ ] **Deferred (post-demo):** dogfood capstone (§5.2).

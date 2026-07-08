@@ -93,3 +93,11 @@
 **Context**: CONSTRUCTION → Build & Test. Real-Notion verification un-deferred; only the dogfood capstone remains deferred.
 
 ---
+
+## Build Driver Switch — OpenSymphony → symphony-claude ("Symphony Cloud")
+**Timestamp**: 2026-07-08T01:00:00Z
+**User Input**: "Let's try to use Symphony Cloud in this implementation since OpenSymphony is not readily available for cloud support. For now let's use this.  /Volumes/Life-OS/Users/Arkatechie/Development/claude-code-skills/symphony-claude"
+**AI Response**: "Inspected `../symphony-claude`: a TypeScript reimplementation of Symphony (README, SYMPHONY_SETUP.md, package.json, src/, WORKFLOW.md). It polls **Linear** and launches Claude Code CLI subprocesses per issue (stream-json, --resume multi-turn), with TUI + web dashboard (:3000). It is already wired to Linear project `d27271e017ad` (same project holding our backlog ARK-49…55) and its committed WORKFLOW.md clones the target repo. Verified MCP behavior in `src/agent/runner.ts::writeMcpConfig`: it injects ONLY a hardcoded `symphony-linear` (linear_graphql) MCP server via `--mcp-config`, and does NOT pass `--strict-mcp-config` — so a target-repo `.mcp.json` for Notion coexists, which is how the product's required real-Notion tests (SYM-004/006/007) get Notion MCP. Switched B1 from the Rust OpenSymphony engine to symphony-claude across the plan, aidlc-state, RUNBOOK (Phase 2 restructured into 2A symphony-claude / 2B OpenSymphony; intro, setup, troubleshooting updated), and CLAUDE.md (driver is pluggable). Linear stays the build tracker; the real-Notion verification requirement is unchanged. Moved tag `run-2-construction-baseline` to the new commit."
+**Context**: CONSTRUCTION → Build & Test. Build driver = symphony-claude + Linear (OpenSymphony retained as documented alternative). Notion MCP for the product's tests wired via target-repo .mcp.json.
+
+---
