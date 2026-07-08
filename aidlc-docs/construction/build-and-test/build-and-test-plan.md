@@ -97,7 +97,15 @@ runnable increment," not just "code merged."
 The product's value is the Notion connection, so verification runs against a **real** board. Set up
 once; reused by `smoke:tracker`, `smoke:e2e`, and the required integration tests.
 
-### 4.1 Notion "Symphony Dev Board" (throwaway)
+### 4.1 Notion "Symphony Dev Board" (throwaway) — ✅ PROVISIONED
+Created 2026-07-08. Pin these into the product's `tracker.*` config (PRD §8 / resolves the §10
+data-source-vs-database binding):
+- **Database URL:** `https://app.notion.com/p/1c7826ea19e443b9addd794981606d56`
+- **database id:** `1c7826ea19e443b9addd794981606d56` · **data-source id:** `c29d9c6a-0db6-4dcb-bb52-66a0ac769468`
+- **Seed rows:** `DEV-1` "Walking-skeleton smoke: self-complete" (**Todo** — the e2e target; task = write
+  `HELLO.md` then self-transition to Done) · `DEV-2` "Control: already Done" (**Done** — must be
+  ignored by candidate fetch).
+
 A Notion database with the properties the tracker normalizer expects:
 - **Status** (select): `Todo`, `In Progress`, `In Review`, `Done`, `Cancelled`
   (active = `["Todo","In Progress"]`, terminal = `["Done","Cancelled"]`, PRD §8 defaults).

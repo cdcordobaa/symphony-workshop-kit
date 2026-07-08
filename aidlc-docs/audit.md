@@ -109,3 +109,11 @@
 **Context**: CONSTRUCTION → Build & Test. Driver config authored; Notion key demoted to optional fallback (connector is the default path).
 
 ---
+
+## Notion Dev Board Provisioned + "What We Require" Clarified + Target-Repo Question
+**Timestamp**: 2026-07-08T01:40:00Z
+**User Input**: "As the target repo should not be that one, actually it should be this, which is the symphony notion version. Just create the Notion. I don't have quite clear what you mean by 'we still require'. It's not clear what we require. Do you mean the Notion_API_KEY or what?"
+**AI Response**: "Clarified 'what we require' = the real **Notion board** (the substrate the SYM-004/007 tests read/drive), NOT the NOTION_API_KEY (key is optional; the claude.ai Notion connector covers it). Created the board via the Notion connector: **Symphony Dev Board** (database id `1c7826ea19e443b9addd794981606d56`, data-source id `c29d9c6a-0db6-4dcb-bb52-66a0ac769468`) with Status(select Todo/In Progress/In Review/Done/Cancelled), Priority, Labels, auto ID(DEV-). Seeded DEV-1 'Walking-skeleton smoke: self-complete' (Todo — e2e target: write HELLO.md then self-transition to Done) and DEV-2 'Control: already Done' (Done — must be ignored by candidate fetch). Recorded ids in plan §4.1 + aidlc-state. Target-repo change: the user says the target should NOT be cdcordobaa/symphony (the local `../symphony`) but 'the symphony notion version' — the specific path/URL did not come through in the message; asked the user to provide it before updating build-driver/WORKFLOW.md hooks.after_create."
+**Context**: CONSTRUCTION → Build & Test. Notion Dev Board provisioned. Blocking on the exact target-repo URL for the driver clone hook.
+
+---
