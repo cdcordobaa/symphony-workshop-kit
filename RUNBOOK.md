@@ -236,6 +236,38 @@ toward a terminal state. Blocked issues wait for their blockers.
 **2A.6 Review & merge** — review PRs as they arrive; advance approved issues per your Status Map. As
 blockers merge, dependents unblock and get claimed.
 
+**2A.7 The per-unit review gate (how the chain actually advances).** This is the cadence you operate,
+verified on a real run:
+
+1. The driver claims a `Todo` ticket, an agent implements it, pushes a branch, opens a PR, and moves
+   the ticket to **In Review**, then **stops**. The driver goes **idle** (`running: 0`) — this is
+   expected, not a hang.
+2. `In Review` is **not a terminal state**, and the driver only unblocks a dependent when *all* its
+   blockers are terminal. So the chain **pauses** here until you act.
+3. Review the PR (build + tests + the unit's `smoke:*` per `BUILD-CONTRACT.md`), **merge it to `main`**,
+   then set the ticket to a **terminal** state (**Done**).
+4. On its next poll the driver detects the dependent is unblocked, clones the **updated `main`**, and
+   starts the next unit. Repeat until the last unit (the MVP gate) is green.
+
+> Each agent clones `main` fresh per workspace, so a unit's dependency must be **merged to `main`**
+> (not just "In Review") before the dependent can build on it. Merge promptly to keep the chain moving.
+
+**2A.8 Gotchas (learned on a real run).**
+- **Stale tracker states.** Tickets left `In Review`/`In Progress` by an earlier, aborted run — with
+  no branch or PR — will not be re-claimed (those states aren't active). Reset them to `Todo` so the
+  driver rebuilds them. Don't trust the status column alone; confirm a real PR exists.
+- **Published blockers can be stricter than your plan chart.** The `blockedBy` relations actually in
+  the tracker drive dispatch order (a unit may block on more than the plan diagram showed), so the
+  driver may serialize where you expected parallelism. That's correct behavior — check the relations,
+  not the diagram.
+- **Building in-place (target repo = this repo).** If agents build the product into the same repo that
+  holds the planning kit, its `CLAUDE.md` planning persona will otherwise tell them "construction is
+  not done here" — add an **implementation-agent clause** to `CLAUDE.md` and a root `BUILD-CONTRACT.md`
+  so agents know their job. Pin the test harness (here: `node:test`) so every unit matches.
+- **First ticket may over-deliver.** An early agent can bundle several units into one PR; later tickets
+  then mostly add their missing `smoke:*` + reconcile to the DoD rather than rebuild. That's fine —
+  merge it and let the remaining tickets fill gaps.
+
 ### 2B — Drive with the OpenSymphony engine (Rust, alternative)
 
 Full detail in `engine/engine-setup.md`; the short path:
@@ -280,6 +312,9 @@ Full rules: `.agents/skills/aidlc-to-tasks/SKILL.md`.
 | Agent can't reach Notion (product tests fail) | Target-repo `.mcp.json` missing the Notion server, or `NOTION_API_KEY` not exported in the driver shell (Phase 2A.3). |
 | Run stuck/failing (OpenSymphony) | `/debug <ISSUE-ID>`; inspect `~/.opensymphony/workspaces/<ISSUE>/.opensymphony/claude/stdout.ndjson`. |
 | Run stuck/failing (symphony-claude) | Check the TUI/`symphony.log`, the web dashboard at `:3000`, and the workspace under `workspace.root/<ISSUE>/`. |
+| Driver went idle (`running: 0`) after a PR opened | Expected — the ticket is `In Review` (not terminal). Merge the PR to `main` and set the ticket **Done**; the next unit unblocks on the following poll (§2A.7). |
+| Dependent never starts though its blocker "looks done" | The blocker is `In Review`, not a terminal state. Merge its PR and move it to **Done** — dispatch requires blockers to be terminal. |
+| Ticket marked In Review but has no branch/PR | Stale state from an earlier run. Reset it to `Todo` so the driver rebuilds it (§2A.8). |
 
 ## Appendix C — Experimental harness caveats
 

@@ -141,3 +141,11 @@
 **Context**: CONSTRUCTION. SYM-001 integrated + green on main; remaining 6 units queued as Todo; driver ready to run.
 
 ---
+
+## RUNBOOK — capture live Phase-2 operational learnings
+**Timestamp**: 2026-07-08T02:55:00Z
+**User Input**: "We are updating the runbook at each stage so others can replicate this. ?"
+**AI Response**: "Confirmed we'd only documented the structure, not the live-run operations. Added to RUNBOOK Phase 2A: §2A.7 'the per-unit review gate' (agent → PR → In Review → driver idle → human review+merge to main+set Done → next unit unblocks on next poll; each agent clones main fresh so deps must be merged, not just In Review), and §2A.8 'gotchas' (stale tracker states with no PR → reset to Todo; published blockers can be stricter than the plan chart; building in-place needs the CLAUDE.md implementer clause + BUILD-CONTRACT.md + pinned harness; first ticket may over-deliver/bundle units). Added 3 Appendix B troubleshooting rows (idle-after-PR, dependent-won't-start-because-blocker-In-Review, In-Review-with-no-PR). These reflect the ARK-49/ARK-50 run: driver kicked off, ARK-50 built → PR #2 → merged → Done → ARK-51 auto-claimed."
+**Context**: CONSTRUCTION → replicability. RUNBOOK now carries the operational cadence + gotchas observed live.
+
+---
