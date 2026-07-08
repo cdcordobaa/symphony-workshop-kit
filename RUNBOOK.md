@@ -267,6 +267,17 @@ verified on a real run:
 - **First ticket may over-deliver.** An early agent can bundle several units into one PR; later tickets
   then mostly add their missing `smoke:*` + reconcile to the DoD rather than rebuild. That's fine —
   merge it and let the remaining tickets fill gaps.
+- **Driver can be killed/restarted safely.** If the daemon stops mid-unit (sleep, Ctrl-C), just restart
+  it — it re-claims the in-flight ticket (still active) and the agent resumes from the reused workspace.
+  Run `caffeinate -dimsu` alongside it to stop the Mac sleeping during long runs.
+
+**2A.9 What a completed run looks like (worked example).** For the 7-unit MVP walking skeleton this kit
+ships, a green run ends with: 7 merged PRs (#1–#7), every ticket `Done`, and on `main` `npm run build`
+clean + `npm test` green + `npm run smoke:e2e` printing the MVP-gate checks all PASS (candidate
+dispatched, workspace confined, agent wrote its file, reconciled at terminal, secret-safe). Tag the
+point (`run-<N>-mvp-gate`, Appendix E). The automated e2e proves the gate over live-captured tracker
+payloads through the real pipeline; for a **truly-live** demo, run the built product directly against
+the real board (`node dist/index.js ./WORKFLOW.md`) with a live tracker MCP server wired.
 
 ### 2B — Drive with the OpenSymphony engine (Rust, alternative)
 

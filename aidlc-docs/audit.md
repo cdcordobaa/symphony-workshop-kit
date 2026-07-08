@@ -149,3 +149,11 @@
 **Context**: CONSTRUCTION → replicability. RUNBOOK now carries the operational cadence + gotchas observed live.
 
 ---
+
+## M1 MVP Walking Skeleton COMPLETE — MVP gate green
+**Timestamp**: 2026-07-08T22:45:00Z
+**User Input**: "keep going, merge them as they land" / "keep running the loop until ARK-55 is green" (standing instruction)
+**AI Response**: "Ran the review→verify→merge→Done loop to completion. Merged PRs #2 (ARK-50 config), #3 (ARK-51 observability), #4 (ARK-52 Notion tracker — real-Notion integration over live-captured Dev Board payloads), #5 (ARK-53 workspace + 3 safety invariants), #6 (ARK-54 agent runner — real Claude Code turn writing HELLO.md), #7 (ARK-55 orchestrator + reconciliation + CLI — the MVP gate). Each verified locally (build + node:test + unit smoke) before merge; each ticket set Done to unblock the next (serial chain — published blockers stricter than the chart). Driver killed once mid-ARK-55; restarted and re-claimed it from the reused workspace. Final on integrated main: build clean, npm test 167 pass / 1 skipped / 0 fail, smoke:e2e = MVP walking skeleton PASS end-to-end. All ARK-49…ARK-55 Done; M1 complete. Stopped the idle driver. Updated aidlc-state + RUNBOOK §2A.9. Tag: run-2-mvp-gate."
+**Context**: CONSTRUCTION → M1 COMPLETE. Remaining optional: truly-live run, Phase-2 Core Conformance, dogfood capstone.
+
+---
