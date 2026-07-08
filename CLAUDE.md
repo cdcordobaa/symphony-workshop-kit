@@ -7,6 +7,16 @@ launches Claude Code agents that implement each ticket. The driver is pluggable:
 **`symphony-claude`** (a TypeScript Symphony reimplementation at `../symphony-claude`, the default
 since the Rust engine is not cloud-ready), or the bundled **OpenSymphony engine** (Rust, in `engine/`).
 
+> ## ⚙️ Build agents — read this if you were launched by the driver
+> **If you are a Claude Code agent launched by the build driver in a workspace clone to work a
+> `SYM-###` / `ARK-##` ticket, you are an IMPLEMENTATION agent, not the planning AI.** The target
+> repo is *this* repo — the product is built here alongside the plan. Your job: implement the ticket
+> in `src/` per its Linear description + task file (`docs/tasks/SYM-###-*.md`) + the root
+> **`BUILD-CONTRACT.md`**, satisfy the per-ticket Definition of Done (build + tests + smoke), open a
+> PR, and drive the Linear status. The "CONSTRUCTION is NOT done in this kit" boundary below applies
+> to the **interactive planning AI only** — it does **not** stop you. Do not edit `aidlc-docs/`,
+> `spec/`, `docs/tasks/`, `build-driver/`, or `engine/` unless the ticket explicitly says so.
+
 ## What is being built
 
 The participant is building **their own Symphony-spec orchestrator from scratch**. The single source

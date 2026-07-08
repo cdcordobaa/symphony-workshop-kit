@@ -125,3 +125,11 @@
 **Context**: CONSTRUCTION → Build & Test. Target repo = self. Build partially begun; reconciliation of harness/persona/base-branch pending user decision.
 
 ---
+
+## Reconciliation Executed (harness + persona + BUILD-CONTRACT)
+**Timestamp**: 2026-07-08T02:10:00Z
+**User Input**: "so what now ?"
+**AI Response**: "Proceeded with the three recommended reconciliations for building in-repo: (1) aligned the plan's harness B3 from vitest to **node:test** (`node --import tsx --test`) to match the ARK-49 scaffolding already in the repo — updated the script contract + testing-pyramid wording; (2) added a **build-agent implementer clause** to `CLAUDE.md` so driver-launched agents know they implement the ticket (not the planning-AI boundary), and told them not to touch aidlc-docs/spec/docs-tasks/build-driver/engine; (3) created root **`BUILD-CONTRACT.md`** (node:test script contract, per-ticket Definition of Done, per-unit smoke matrix, safety invariants, Dev Board ids, status map). Updated aidlc-state. Remaining before starting the driver: merge `construction-run-2` → `main` + push so agents clone a base carrying the plan/tasks/BUILD-CONTRACT, and decide the existing ARK-49 branch's fate."
+**Context**: CONSTRUCTION → Build & Test. Harness/persona/contract reconciled; base-branch merge + ARK-49 disposition next.
+
+---

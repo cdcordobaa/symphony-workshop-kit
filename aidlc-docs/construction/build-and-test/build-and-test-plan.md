@@ -12,7 +12,7 @@
 |---|----------|--------|
 | B1 | **Build orchestrator** | **symphony-claude ("Symphony Cloud") + Linear.** The `symphony-claude` orchestrator (a TypeScript reimplementation of Symphony at `../symphony-claude`) polls **Linear** and launches a Claude Code CLI agent per ticket — replacing the Rust OpenSymphony engine (not cloud-ready). Drives all 7 units (waves 0–4). *The dogfood capstone (product orchestrates its own Phase-2 completion) is **DEFERRED** — see §5.2.* |
 | B2 | **Per-step verification** | **Build + unit tests green + a per-ticket smoke** that shows the unit doing its real job; a real-Notion end-to-end run at SYM-007 = the MVP gate. |
-| B3 | **Test harness (G1)** | **vitest** for unit + integration; `tsc` for build. Pinned in SYM-001 so every ticket shares one contract. |
+| B3 | **Test harness (G1)** | **node:test** (`node --import tsx --test`) for unit + integration; `tsc` for build. Matches the SYM-001/ARK-49 scaffolding already in the repo — avoids rewriting working tests. Shared via SYM-001 so every ticket uses one contract. |
 | B4 | **Integration substrate (G3/G4)** | **Real Notion + MCP is REQUIRED for verification** — the product's value *is* the Notion connection, so we prove it against a live board. Unit tests mock Notion for speed/determinism; **SYM-004 and SYM-007 additionally carry required integration/e2e tests that hit a real Notion "Symphony Dev Board" via MCP.** Not deferred. |
 
 > **Two separate axes — don't conflate them:**
@@ -31,17 +31,17 @@ Pinned in **SYM-001** so no later ticket re-litigates it. Every unit codes to th
 ```jsonc
 // package.json scripts (the shared green-bar contract)
 {
-  "build":   "tsc -p tsconfig.json",           // must compile clean
-  "test":    "vitest run",                       // unit always; integration when creds present
-  "test:watch": "vitest",
-  "test:integration": "vitest run --project integration",  // real Notion MCP + real agent turn
+  "build":       "tsc -p tsconfig.build.json",   // must compile clean
+  "typecheck":   "tsc -p tsconfig.json --noEmit",
+  "test":        "node --import tsx --test \"test/**/*.test.ts\"",                    // unit
+  "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",  // real Notion / real agent
   "smoke:config":        "tsx smoke/config.ts ./WORKFLOW.md",
   "smoke:observability": "tsx smoke/observability.ts",
   "smoke:tracker":       "tsx smoke/tracker.ts",        // hits the real Notion Dev Board via MCP (§4)
   "smoke:workspace":     "tsx smoke/workspace.ts",
   "smoke:agent":         "tsx smoke/agent.ts",
-  "smoke:e2e":           "node dist/cli.js ./WORKFLOW.md --once",  // SYM-007, real Notion board (§4)
-  "verify":  "npm run build && npm test"         // the gate a ticket must pass before Done
+  "smoke:e2e":           "node --import tsx src/index.ts ./WORKFLOW.md --once",  // SYM-007, real Notion board (§4)
+  "verify":      "npm run build && npm test"     // the gate a ticket must pass before Done
 }
 ```
 
@@ -53,8 +53,8 @@ Pinned in **SYM-001** so no later ticket re-litigates it. Every unit codes to th
     never silently pass.
   - **E2E (SYM-007):** the CLI against the **real Notion Dev Board** = the MVP gate.
   - *Dogfood capstone* — deferred (§5.2).
-- vitest "projects" separate `unit` from `integration` so unit+smoke stay fast while the required
-  real-Notion integration runs on the agents that have `NOTION_API_KEY`.
+- Separate `unit` (`test/`) from `integration` (`test/integration/`) by folder so unit+smoke stay
+  fast, while the required real-Notion integration runs on agents that can reach Notion (§4).
 
 ## 2. Per-ticket Definition of Done (G2) — "working at each step"
 
