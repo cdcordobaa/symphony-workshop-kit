@@ -59,6 +59,91 @@ export interface AgentRunner {
 }
 
 /* ------------------------------------------------------------------------- *
+ * Observability — §13 Logging, Status, and Observability (Core subset).
+ * ------------------------------------------------------------------------- */
+
+/** Severity of a {@link LogRecord}, ordered least-to-most severe. */
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+/**
+ * Structured context attached to a log record (§13.1). The three named fields
+ * are the REQUIRED context for issue-related and session-lifecycle logs; extra
+ * keys carry the `key=value` detail the spec asks for (`action`, `outcome`, …).
+ */
+export interface LogContext {
+  /** Stable tracker-internal issue ID (§13.1, REQUIRED for issue logs). */
+  issue_id?: string;
+  /** Human-readable ticket key, e.g. `ABC-123` (§13.1, REQUIRED for issue logs). */
+  issue_identifier?: string;
+  /** Coding-agent session id (§13.1, REQUIRED for session-lifecycle logs). */
+  session_id?: string;
+  /** Arbitrary additional structured fields (rendered as `key=value`). */
+  [key: string]: unknown;
+}
+
+/** One fully-resolved, structured log record — the unit a {@link LogSink} receives. */
+export interface LogRecord {
+  /** ISO-8601 timestamp of the record. */
+  time: string;
+  level: LogLevel;
+  message: string;
+  /** Merged bound + call-site context, after secret redaction. */
+  context: LogContext;
+}
+
+/**
+ * A destination for structured records (§13.2). Implementations MAY write to
+ * stderr, a file, or a remote sink. `write` MUST NOT be relied upon to succeed:
+ * the {@link Logger} isolates sink failures so a broken sink never reaches callers.
+ */
+export interface LogSink {
+  write(record: LogRecord): void;
+}
+
+/**
+ * Structured logger (§13.1). Every record carries merged context; secret values
+ * are redacted before any sink sees them (§13, FR21). `child` returns a logger
+ * with additional context bound — e.g. the orchestrator binds `issue_id`/
+ * `issue_identifier`, then the agent binds `session_id`.
+ */
+export interface Logger {
+  debug(message: string, context?: LogContext): void;
+  info(message: string, context?: LogContext): void;
+  warn(message: string, context?: LogContext): void;
+  error(message: string, context?: LogContext): void;
+  /** A logger that merges `context` into every record it emits. */
+  child(context: LogContext): Logger;
+}
+
+/** A single currently-active run tracked by the {@link StatusSurface} (§13.4). */
+export interface ActiveRun {
+  /** Human-readable ticket key; the identity key for upsert/remove. */
+  issue_identifier: string;
+  /** Coding-agent session id, when a session has started. */
+  session_id?: string;
+  /** Short lifecycle phase, e.g. `running`, `retrying`. */
+  phase?: string;
+}
+
+/**
+ * Human-readable terminal status surface (§13.4). OPTIONAL per the spec and NOT
+ * required for correctness: it draws only from orchestrator state, and rendering
+ * or printing failures MUST NOT propagate to callers.
+ */
+export interface StatusSurface {
+  /** Insert or replace the active run keyed by `issue_identifier`. */
+  upsert(run: ActiveRun): void;
+  /** Drop the active run for `issueIdentifier` (no-op if absent). */
+  remove(issueIdentifier: string): void;
+  /** Snapshot of the currently-active runs, in insertion order. */
+  activeRuns(): ActiveRun[];
+  /** Render the current active set as a single status line. */
+  render(): string;
+  /** Write the status line to the configured stream; never throws. */
+  print(): void;
+}
+
+/* ------------------------------------------------------------------------- *
  * Tracker Client — §11.1 REQUIRED operations.
  * ------------------------------------------------------------------------- */
 
