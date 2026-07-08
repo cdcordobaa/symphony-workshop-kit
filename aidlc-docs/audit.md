@@ -85,3 +85,11 @@
 **Context**: CONSTRUCTION → Build & Test. Demo posture: implementation driven only from OpenSymphony + Linear. Deferred items paused, not dropped.
 
 ---
+
+## Build & Test Correction — Real Notion + MCP Testing is REQUIRED (un-deferred)
+**Timestamp**: 2026-07-08T00:45:00Z
+**User Input**: "the real notion plus MCP should be tested so we guarantee we are building a working product that should not be deferred even though the complete implementation happens only through OpenSymphony and Linear."
+**AI Response**: "Corrected B4: separated the two axes. *Implementation orchestration* stays engine + Linear only (dogfood capstone remains DEFERRED). *Verification* is no longer mock-only — real Notion + MCP is now REQUIRED: SYM-004 and SYM-007 carry required integration/e2e tests against a real Notion 'Symphony Dev Board', and the SYM-007 e2e (the MVP gate) runs against the live board (seed ticket task = 'use your Notion tools to move this ticket to Done', exercising both the agent-write and orchestrator-read MCP paths). Updated `build-and-test-plan.md` (B4, §1 pyramid, §3 matrix, §4 REQUIRED, §5.1 wave note + engine-cred prerequisite, §7 actions), `aidlc-state.md`, and RUNBOOK Phase 1.5 point 3 (mock units, but the product's defining integration must be proven against the real service). Moved reference tag `run-2-construction-baseline` to the corrected commit."
+**Context**: CONSTRUCTION → Build & Test. Real-Notion verification un-deferred; only the dogfood capstone remains deferred.
+
+---

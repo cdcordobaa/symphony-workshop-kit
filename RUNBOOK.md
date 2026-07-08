@@ -162,10 +162,17 @@ Decide and record four things:
    ticket must go **build green → unit tests green → a runnable smoke that shows the unit doing its real
    job** before it moves to review. "Done" then means a *verified, runnable* increment — and because the
    engine only unblocks dependents when a blocker is done, quality gates the whole wave graph.
-3. **Test substrate.** For a demo you usually **mock the product's external tracker** (e.g. a mocked
-   Notion MCP) so the walking skeleton runs with no live external board; the end-to-end run in the last
-   ticket uses an in-memory fixture. Swapping the mock for the real integration is the first post-demo
-   step. Record it as deferred so it is not lost.
+3. **Test substrate.** Mock external services in **unit** tests for speed and determinism — but do
+   **not** let the product's *defining* integration be mock-only, or "it works" is unproven. If the
+   product's whole value is a connection (here: reading/driving a **Notion** board via MCP), make a
+   **real** integration/e2e test a *required* part of the Definition of Done for the ticket(s) that own
+   that connection, and reach the MVP gate against a **real** board — not a fixture. Keep a fast
+   in-memory fixture too if you want quick CI, but the gate is the real run. (Only truly separable,
+   later-iteration work — e.g. having the finished product build *itself* — should be deferred.)
+
+   > Note the two independent axes: *who orchestrates the build* (here: OpenSymphony + Linear only) is
+   > separate from *what the tests run against* (here: a real Notion board). Simplifying the first does
+   > not require mocking the second.
 4. **Agent-facing build contract.** The engine's agents read the **target repo**, not `aidlc-docs/`.
    So put the script contract + per-ticket DoD in a **`BUILD-CONTRACT.md` at the target repo root**
    (created by the first ticket) and reference it from the target repo's `CLAUDE.md` / `WORKFLOW.md`
