@@ -1,0 +1,29 @@
+{
+  "name": "symphony-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Symphony-spec orchestrator (Notion variant). U1 foundation: CLI/host lifecycle, WORKFLOW.md loader, typed config layer, shared domain types, and a strict prompt renderer.",
+  "bin": {
+    "symphony": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node --import tsx src/index.ts",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "liquidjs": "^10.21.0",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
