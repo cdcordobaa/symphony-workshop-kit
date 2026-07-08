@@ -40,10 +40,16 @@
 ### CONSTRUCTION
 > In this workshop, CONSTRUCTION is executed by the **OpenSymphony engine** driving Claude agents
 > per Linear ticket — not by the planning AI. Track per-ticket status in Linear, not here.
+- [x] Build & Test definition — `construction/build-and-test/build-and-test-plan.md` (branch `construction-run-2`).
+  Decisions: **B1** hybrid orchestration (engine builds waves 0–4 off Linear → finished product
+  dogfoods its Phase-2 completion); **B2** per-ticket DoD = build+unit-tests green + a smoke that
+  shows the unit's real job, real-Notion e2e at SYM-007 = MVP gate; **B3** harness = vitest + tsc
+  (pinned in SYM-001); **B4** Notion "Symphony Dev Board" + Notion MCP wired for orchestrator (read)
+  and agent (writes).
 
 ## Current Status
 
-- **Lifecycle phase**: BRIDGE complete → CONSTRUCTION (Phase 2, engine-driven)
-- **Current stage**: Backlog published to Linear; ready to start the OpenSymphony engine
-- **Next stage**: Start the engine (`engine/engine-setup.md`, RUNBOOK Phase 2) so it picks up ARK-49 (Unit 1.1)
-- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Per the kit boundary, implementation is done by the engine driving Claude Code agents per ticket — tracked in Linear, not here.
+- **Lifecycle phase**: CONSTRUCTION — Build & Test defined; ready to wire tickets + start the engine
+- **Current stage**: Build & Test plan approved on branch `construction-run-2`; execution actions pending approval (see plan §7)
+- **Next stage**: (1) fold harness + `BUILD-CONTRACT.md` + per-ticket DoD/smoke into SYM-001…007 (+ Linear); (2) stand up the Notion Dev Board + `NOTION_API_KEY`; (3) start the engine on ARK-49 (Wave 0)
+- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach is defined in `construction/build-and-test/build-and-test-plan.md`. Per the kit boundary, per-unit implementation is done by the engine driving Claude Code agents per ticket — tracked in Linear, not here.
