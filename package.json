@@ -22,6 +22,7 @@
     "smoke:tracker": "tsx smoke/tracker.ts",
     "smoke:workspace": "tsx smoke/workspace.ts",
     "smoke:agent": "tsx smoke/agent.ts",
+    "smoke:retry": "tsx smoke/retry.ts",
     "smoke:e2e": "tsx smoke/e2e.ts",
     "verify": "npm run build && npm test"
   },

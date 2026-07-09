@@ -18,10 +18,16 @@
  *     keeps workers) and the daemon survives; an unexpected error in a tick is
  *     caught so the loop keeps running; observability calls never propagate.
  *
- * Deferred (PRD §5.3, intentionally absent): retry/backoff, continuation retries,
- * the retry queue, per-state concurrency caps, stall detection, and the startup
+ *   - **Retry/backoff** (§8.4, §16.6 / ARK-56): a FAILED run (agent error, or a
+ *     `failed`/`timeout` attempt) is scheduled for an exponential-backoff retry
+ *     via {@link RetryQueue} rather than dropped. When a retry is due it is
+ *     re-dispatched if still active/eligible with a free slot, requeued if no
+ *     slot, or dropped (claim released) if the issue is missing/terminal.
+ *
+ * Deferred (PRD §5.3, intentionally absent): continuation retries after a *clean*
+ * turn, per-state concurrency caps, stall detection, and the startup
  * terminal-workspace cleanup sweep. Persistence across restarts is permanently
- * out (§5.4) — all scheduler state is in-memory.
+ * out (§5.4) — all scheduler state, including retry timers, is in-memory.
  */
 
 import type {
@@ -42,6 +48,7 @@ import type {
 import { preflightConfig } from "../config/preflight.js";
 import { noAvailableSlots } from "./concurrency.js";
 import { shouldDispatch } from "./eligibility.js";
+import { RetryQueue } from "./retry.js";
 import { sortForDispatch } from "./sort.js";
 import { stateIn } from "./state-sets.js";
 
@@ -63,6 +70,8 @@ export interface OrchestratorDeps {
   clearTimer?: (handle: TimerHandle) => void;
   /** Injectable clock for deterministic `started_at`. Defaults to `Date`. */
   now?: () => Date;
+  /** Injectable monotonic clock (ms) for retry `due_at_ms`. Defaults to `Date.now`. */
+  nowMs?: () => number;
 }
 
 /** How a running issue was terminated during reconciliation. */
@@ -73,6 +82,33 @@ interface TerminateOptions {
 
 /** A run attempt result that may carry the derived coding-agent session id (§10.2). */
 type MaybeSessionResult = RunAttempt & { session_id?: string };
+
+/** Classified worker exit: whether it failed (→ retry) and, if so, why. */
+interface WorkerOutcome {
+  failed: boolean;
+  error?: string;
+}
+
+/**
+ * Classify a completed {@link RunAttempt} for retry purposes (§8.4). A `failed` or
+ * `timeout` status is a failed run; `succeeded`/`cancelled` are not (a clean turn's
+ * continuation retry is out of scope, and a cancelled run was stopped deliberately).
+ */
+function classifyRunResult(result: RunAttempt): WorkerOutcome {
+  if (result.status === "failed" || result.status === "timeout") {
+    return { failed: true, error: result.error ?? `worker exited: ${result.status}` };
+  }
+  return { failed: false };
+}
+
+/**
+ * Next retry attempt from the just-finished run's `attempt` (§16.6
+ * `next_attempt_from`). The first run's `attempt` is `null` → retry attempt `1`
+ * (delay `base`); a run that was itself retry attempt `n` → `n + 1`.
+ */
+function nextAttempt(previous: number | null): number {
+  return previous === null ? 1 : previous + 1;
+}
 
 /**
  * The orchestrator instance. Constructed via {@link createOrchestrator}; the
@@ -92,6 +128,8 @@ export class Orchestrator {
   private readonly now: () => Date;
 
   private readonly state: OrchestratorRuntimeState;
+  /** Failure-driven retry scheduler over `state.retry_attempts` (§8.4, §16.6). */
+  private readonly retryQueue: RetryQueue;
   /** In-flight worker promises keyed by issue id (for graceful shutdown). */
   private readonly workers = new Map<string, Promise<void>>();
 
@@ -111,6 +149,17 @@ export class Orchestrator {
     this.clearTimer = deps.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>));
     this.now = deps.now ?? (() => new Date());
     this.state = createRuntimeState(this.config);
+    this.retryQueue = new RetryQueue({
+      entries: this.state.retry_attempts,
+      maxBackoffMs: this.config.agent.max_retry_backoff_ms,
+      onDue: (issueId) => {
+        void this.safeRetryDue(issueId);
+      },
+      setTimer: this.setTimer,
+      clearTimer: this.clearTimer,
+      now: deps.nowMs ?? (() => Date.now()),
+      logger: this.logger,
+    });
   }
 
   /** Read-only view of the authoritative runtime state (tests / status / smoke). */
@@ -152,6 +201,8 @@ export class Orchestrator {
       this.clearTimer(this.tickTimer);
       this.tickTimer = null;
     }
+    // No retry timer may fire after shutdown (§5.4: all scheduler state is in-memory).
+    this.retryQueue.cancelAll();
     this.logger.info("orchestrator stopping", { action: "shutdown" });
     if (this.currentTick !== null) {
       try {
@@ -343,7 +394,9 @@ export class Orchestrator {
     // --- single authority: reserve the slot before doing anything async ---
     this.state.running.set(issue.id, entry);
     this.state.claimed.add(issue.id);
-    this.state.retry_attempts.delete(issue.id);
+    // Clears any pending retry entry AND its timer (belt-and-suspenders: the retry
+    // path already `take`s the entry, but a tick-driven dispatch must not leave one).
+    this.retryQueue.cancel(issue.id);
 
     this.status?.upsert({ issue_identifier: issue.identifier, phase: "running" });
     this.logger.info("issue dispatched", {
@@ -357,8 +410,9 @@ export class Orchestrator {
     this.workers.set(issue.id, worker);
   }
 
-  /** Run one agent attempt and record its exit. Errors are swallowed into a failed exit. */
+  /** Run one agent attempt and record its exit, then hand the outcome to exit bookkeeping. */
   private async runWorker(issue: Issue, attempt: number | null): Promise<void> {
+    let outcome: WorkerOutcome;
     try {
       const result = (await this.agentRunner.run(issue, attempt)) as MaybeSessionResult;
       if (this.state.running.has(issue.id)) {
@@ -375,33 +429,156 @@ export class Orchestrator {
         action: "worker_exit",
         outcome: result.status,
       });
+      outcome = classifyRunResult(result);
     } catch (error) {
+      const message = (error as Error)?.message ?? String(error);
       this.logger.warn("worker errored", {
         issue_id: issue.id,
         issue_identifier: issue.identifier,
         action: "worker_exit",
         outcome: "error",
-        error: (error as Error)?.message ?? String(error),
+        error: message,
       });
-    } finally {
-      this.onWorkerExit(issue.id);
+      // An agent error is a failed run (§8.4): schedule a retry.
+      outcome = { failed: true, error: `worker exited: ${message}` };
     }
+    this.onWorkerExit(issue.id, outcome);
   }
 
   /**
-   * Worker-exit bookkeeping (§16.6, retry-free subset). Idempotent: if reconciliation
-   * already terminated the run, this is a no-op. Continuation/retry scheduling is
-   * deferred (PRD §5.3), so a clean exit simply releases the claim; if the issue is
-   * still active, the next tick may re-dispatch it.
+   * Worker-exit bookkeeping (§16.6). Idempotent: if reconciliation already
+   * terminated the run, this is a no-op.
+   *
+   * - **Failed** exit (agent error, or a `failed`/`timeout` attempt): keep the
+   *   claim (the issue becomes `RetryQueued`) and schedule an exponential-backoff
+   *   retry with an incremented `attempt`.
+   * - **Clean** exit: release the claim and record completion. Continuation
+   *   retries after a clean turn are out of scope (PRD §5.3); if the issue is
+   *   still active, the next tick may re-dispatch it.
    */
-  private onWorkerExit(issueId: string): void {
+  private onWorkerExit(issueId: string, outcome: WorkerOutcome): void {
     this.workers.delete(issueId);
     const entry = this.state.running.get(issueId);
     if (entry === undefined) return; // already terminated by reconciliation
     this.state.running.delete(issueId);
+
+    if (outcome.failed) {
+      const attempt = nextAttempt(entry.attempt);
+      // Claim is intentionally NOT released: the issue is RetryQueued (§7 lifecycle).
+      this.retryQueue.schedule({
+        issueId,
+        identifier: entry.issue_identifier,
+        attempt,
+        error: outcome.error ?? "worker failed",
+      });
+      this.status?.upsert({ issue_identifier: entry.issue_identifier, phase: "retrying" });
+      this.logger.info("run failed; retry scheduled", {
+        issue_id: entry.issue_id,
+        issue_identifier: entry.issue_identifier,
+        action: "worker_exit",
+        outcome: "retry_scheduled",
+        attempt,
+      });
+      this.notifyObservers();
+      return;
+    }
+
     this.state.claimed.delete(issueId);
     this.state.completed.add(issueId); // bookkeeping only (§16.6)
     this.status?.remove(entry.issue_identifier);
+  }
+
+  /* ----------------------------------------------------------------------- *
+   * Retry timer handling (§8.4 retry behavior / §16.6 on_retry_timer).
+   * ----------------------------------------------------------------------- */
+
+  /** Wrap {@link onRetryDue} so a timer callback error never escapes into the loop. */
+  private async safeRetryDue(issueId: string): Promise<void> {
+    try {
+      await this.onRetryDue(issueId);
+    } catch (error) {
+      this.logger.error("retry handling failed (recovered)", {
+        action: "retry_due",
+        issue_id: issueId,
+        error: (error as Error)?.message ?? String(error),
+      });
+    }
+  }
+
+  /**
+   * Handle a matured retry (§16.6 `on_retry_timer`). Fetch active candidates, then:
+   *
+   *   - **missing/terminal** (not in the active candidate set): drop the retry and
+   *     release the claim (§16.6, AC3);
+   *   - **found + eligible, slot free**: re-dispatch preserving the entry's
+   *     `attempt` (which was already incremented at schedule time);
+   *   - **found but no slot** (or a candidate-fetch failure): requeue at
+   *     `attempt + 1` with the appropriate error (§8.4 step 4b).
+   */
+  private async onRetryDue(issueId: string): Promise<void> {
+    const entry = this.retryQueue.take(issueId);
+    if (entry === undefined) return; // cancelled or already handled
+
+    let candidates: Issue[];
+    try {
+      candidates = await this.tracker.fetchCandidateIssues();
+    } catch (error) {
+      this.retryQueue.schedule({
+        issueId,
+        identifier: entry.identifier,
+        attempt: entry.attempt + 1,
+        error: "retry poll failed",
+      });
+      this.logger.warn("retry poll failed; requeued", {
+        issue_id: issueId,
+        issue_identifier: entry.identifier ?? undefined,
+        action: "retry_due",
+        error: (error as Error)?.message ?? String(error),
+      });
+      return;
+    }
+
+    // Candidates are active-only, so a terminal or deleted issue is simply absent.
+    const issue = candidates.find((c) => c.id === issueId);
+    if (issue === undefined) {
+      this.state.claimed.delete(issueId);
+      if (entry.identifier !== null) this.status?.remove(entry.identifier);
+      this.logger.info("retry dropped; issue missing/terminal, claim released", {
+        issue_id: issueId,
+        issue_identifier: entry.identifier ?? undefined,
+        action: "retry_drop",
+        outcome: "released",
+      });
+      this.notifyObservers();
+      return;
+    }
+
+    if (noAvailableSlots(this.state)) {
+      this.retryQueue.schedule({
+        issueId,
+        identifier: issue.identifier,
+        attempt: entry.attempt + 1,
+        error: "no available orchestrator slots",
+      });
+      this.logger.info("retry requeued; no available slots", {
+        issue_id: issueId,
+        issue_identifier: issue.identifier,
+        action: "retry_due",
+        attempt: entry.attempt + 1,
+      });
+      this.notifyObservers();
+      return;
+    }
+
+    // Re-dispatch preserving the scheduled attempt (§16.6 `attempt=retry_entry.attempt`).
+    this.logger.info("retry due; re-dispatching", {
+      issue_id: issueId,
+      issue_identifier: issue.identifier,
+      action: "retry_due",
+      outcome: "redispatch",
+      attempt: entry.attempt,
+    });
+    this.dispatch(issue, entry.attempt);
   }
 
   /* ----------------------------------------------------------------------- *
