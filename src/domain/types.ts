@@ -150,6 +150,11 @@ export interface RunningEntry {
   issue_identifier: string;
   /** `null` for the first run, `>= 1` for retries/continuations. */
   attempt: number | null;
+  /**
+   * Tracked issue state at dispatch time, used for per-state concurrency
+   * accounting (§8.3). Compared case-insensitively via the state-set helpers.
+   */
+  state: string;
   workspace_path: string;
   started_at: string;
   session: LiveSession | null;

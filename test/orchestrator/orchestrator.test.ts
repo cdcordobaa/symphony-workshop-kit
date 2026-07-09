@@ -278,3 +278,48 @@ test("[FR20] stop() cancels the pending tick, drains workers, and is idempotent"
     "a clean-shutdown line was emitted",
   );
 });
+
+/* ----------------------------- §8.3: per-state concurrency caps ----------------------------- */
+
+test("[§8.3] a per-state cap blocks a 2nd same-state issue in one tick while another state still dispatches", async () => {
+  // Loose global cap (10); In-Progress capped at 1 per state.
+  const config = testConfig({
+    agent: {
+      ...testConfig().agent,
+      max_concurrent_agents: 10,
+      max_concurrent_agents_by_state: { "in progress": 1 },
+    },
+  });
+  const tracker = new FakeTracker();
+  // Priorities force sort order IP1(1) → TODO(2) → IP2(3).
+  tracker.candidates = [
+    issue({ id: "ip1", identifier: "DEV-IP1", state: "In Progress", priority: 1 }),
+    issue({ id: "todo", identifier: "DEV-TODO", state: "Todo", priority: 2 }),
+    issue({ id: "ip2", identifier: "DEV-IP2", state: "In Progress", priority: 3 }),
+  ];
+  const agent = new FakeAgentRunner();
+  agent.mode = "manual"; // keep workers live so the per-state count is observable within the tick
+
+  const orchestrator = createOrchestrator({
+    config,
+    tracker,
+    agentRunner: agent,
+    workspaceManager: new FakeWorkspaceManager(),
+    logger: captureLogger().logger,
+    status: createStatusSurface({ label: "test", stream: { write: () => true } }),
+    setTimer: manualScheduler().setTimer,
+    clearTimer: manualScheduler().clearTimer,
+    now: () => new Date("2026-01-01T00:00:00.000Z"),
+  });
+
+  await orchestrator.tick();
+
+  assert.deepEqual(
+    agent.runs.map((r) => r.issue.identifier),
+    ["DEV-IP1", "DEV-TODO"],
+    "first In-Progress + the Todo dispatch; the 2nd In-Progress is blocked by the per-state cap",
+  );
+  assert.equal(orchestrator.runningCount(), 2, "global cap had room but per-state cap held IP2 back");
+  // The blocked issue was never claimed.
+  assert.equal(orchestrator.getState().claimed.has("ip2"), false);
+});

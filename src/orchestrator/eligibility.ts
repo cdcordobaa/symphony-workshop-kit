@@ -7,11 +7,13 @@
  * (§16.2) additionally guards the global slot count before each call; we also
  * check it here so the predicate is correct in isolation.
  *
- * Per-state concurrency and stall handling are deferred (PRD §5.3).
+ * Concurrency is enforced as two caps (§8.3): the global cap, then the per-state
+ * cap for the issue's tracked state — effective availability is the `min` of the
+ * two. Stall handling remains deferred (PRD §5.3).
  */
 
 import type { Issue, OrchestratorRuntimeState, ServiceConfig } from "../domain/types.js";
-import { noAvailableSlots } from "./concurrency.js";
+import { noAvailableSlots, noPerStateSlots } from "./concurrency.js";
 import { stateIn } from "./state-sets.js";
 
 /** Reason a candidate was rejected (surfaced to debug logs; not a control path). */
@@ -22,6 +24,7 @@ export type IneligibleReason =
   | "already_running"
   | "already_claimed"
   | "no_slots"
+  | "no_state_slots"
   | "blocked";
 
 export interface EligibilityResult {
@@ -65,6 +68,7 @@ export function evaluateEligibility(
   if (state.running.has(issue.id)) return { eligible: false, reason: "already_running" };
   if (state.claimed.has(issue.id)) return { eligible: false, reason: "already_claimed" };
   if (noAvailableSlots(state)) return { eligible: false, reason: "no_slots" };
+  if (noPerStateSlots(state, config, issue.state)) return { eligible: false, reason: "no_state_slots" };
   if (blockedByNonTerminal(issue, config)) return { eligible: false, reason: "blocked" };
   return { eligible: true };
 }
