@@ -18,3 +18,10 @@ export {
   type IneligibleReason,
 } from "./eligibility.js";
 export { stateIn, stateSet } from "./state-sets.js";
+export {
+  RetryQueue,
+  computeBackoffMs,
+  DEFAULT_RETRY_BASE_MS,
+  type RetryQueueDeps,
+  type ScheduleInput,
+} from "./retry.js";
