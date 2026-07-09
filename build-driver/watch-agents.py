@@ -18,11 +18,16 @@ import os, glob, json, time, sys
 
 HOME = os.path.expanduser("~")
 PROJECTS = os.path.join(HOME, ".claude", "projects")
-# Claude escapes a workspace path like /Users/me/symphony-workspaces/ARK-56
-# into a dir name containing "symphony-workspaces-ARK-56". Match both the
-# symphony-claude (~/symphony-workspaces) and product (~/.symphony/workspaces) layouts.
-MATCH = "symphony-workspaces"
+# Claude escapes a workspace path (e.g. /Users/me/symphony-workspaces/ARK-56)
+# into a project dir name like "-Users-me-symphony-workspaces-ARK-56". Match every
+# Symphony agent workspace layout: symphony-claude (~/symphony-workspaces),
+# the product runtime (~/.symphony/workspaces), and the product build
+# (~/.symphony/build-workspaces). Common shape: contains "symphony" AND "workspaces".
 FROM_START = "--history" in sys.argv
+
+
+def _is_agent_dir(base: str) -> bool:
+    return "symphony" in base and "workspaces" in base
 
 COLORS = ["\033[36m", "\033[32m", "\033[33m", "\033[35m", "\033[34m", "\033[31m"]
 RESET = "\033[0m"
@@ -36,12 +41,14 @@ def color(label: str) -> str:
 
 
 def issue_of(dirname: str) -> str:
-    # -Users-me-symphony-workspaces-ARK-56  ->  ARK-56
-    return dirname.split(MATCH + "-", 1)[-1] if MATCH + "-" in dirname else dirname
+    # ...-symphony-workspaces-ARK-56 / ...-symphony-build-workspaces-DEV-3  ->  ARK-56 / DEV-3
+    return dirname.split("workspaces-", 1)[-1] if "workspaces-" in dirname else dirname
 
 
 def transcript_files():
-    for d in glob.glob(os.path.join(PROJECTS, f"*{MATCH}*")):
+    for d in glob.glob(os.path.join(PROJECTS, "*workspaces*")):
+        if not _is_agent_dir(os.path.basename(d)):
+            continue
         for f in glob.glob(os.path.join(d, "*.jsonl")):
             yield issue_of(os.path.basename(d)), f
 
