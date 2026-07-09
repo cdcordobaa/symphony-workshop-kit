@@ -14,14 +14,17 @@
  *     the same issue twice. Workers run detached; the tick never awaits them.
  *   - **Terminal reconciliation** (FR17): every tick refreshes running issues and
  *     stops any that reached a `terminal_states` value, cleaning its workspace.
+ *   - **Startup terminal-workspace cleanup** (§8.6): before the first tick, remove
+ *     workspace directories for issues already in a terminal state so stale
+ *     per-issue workspaces do not accumulate across restarts. A fetch failure logs
+ *     a warning and startup continues.
  *   - **Reliability** (NFR): a tracker/refresh failure skips only that tick (or
  *     keeps workers) and the daemon survives; an unexpected error in a tick is
  *     caught so the loop keeps running; observability calls never propagate.
  *
  * Deferred (PRD §5.3, intentionally absent): retry/backoff, continuation retries,
- * the retry queue, per-state concurrency caps, stall detection, and the startup
- * terminal-workspace cleanup sweep. Persistence across restarts is permanently
- * out (§5.4) — all scheduler state is in-memory.
+ * the retry queue, per-state concurrency caps, and stall detection. Persistence
+ * across restarts is permanently out (§5.4) — all scheduler state is in-memory.
  */
 
 import type {
@@ -138,6 +141,54 @@ export class Orchestrator {
       max_concurrent_agents: this.state.max_concurrent_agents,
     });
     this.scheduleTick(0); // immediate first tick
+  }
+
+  /**
+   * Startup terminal-workspace cleanup sweep (§8.6). Query the tracker for issues
+   * already in a terminal state and remove each one's workspace directory, so
+   * stale per-issue workspaces do not accumulate across restarts. Intended to run
+   * once on host startup, before/around the immediate first tick.
+   *
+   * Reliability (NFR): a tracker fetch failure logs a warning and returns so
+   * startup proceeds; it never crashes the host. A per-workspace removal failure is
+   * likewise logged and skipped so one bad directory cannot abort the sweep. Only
+   * terminal-state issues are touched — non-terminal issues' workspaces are left
+   * untouched because they are never returned by the terminal-state query.
+   */
+  async cleanupTerminalWorkspaces(): Promise<void> {
+    const terminalStates = this.config.tracker.terminal_states;
+
+    let terminal: Issue[];
+    try {
+      terminal = await this.tracker.fetchIssuesByStates(terminalStates);
+    } catch (error) {
+      this.logger.warn("startup terminal-workspace cleanup fetch failed; continuing startup", {
+        action: "startup_cleanup",
+        error: (error as Error)?.message ?? String(error),
+      });
+      return;
+    }
+
+    let removed = 0;
+    for (const issue of terminal) {
+      try {
+        await this.workspaceManager.remove(issue.identifier);
+        removed += 1;
+      } catch (error) {
+        this.logger.warn("startup workspace removal failed (ignored)", {
+          issue_id: issue.id,
+          issue_identifier: issue.identifier,
+          action: "startup_cleanup",
+          error: (error as Error)?.message ?? String(error),
+        });
+      }
+    }
+
+    this.logger.info("startup terminal-workspace cleanup complete", {
+      action: "startup_cleanup",
+      terminal_count: terminal.length,
+      removed_count: removed,
+    });
   }
 
   /**

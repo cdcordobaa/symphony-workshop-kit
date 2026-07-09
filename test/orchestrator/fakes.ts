@@ -82,6 +82,9 @@ export class FakeTracker implements TrackerClient {
   statesById = new Map<string, Issue>();
   failCandidates: Error | null = null;
   failStates: Error | null = null;
+  failByStates: Error | null = null;
+  /** Records the state-name arguments each `fetchIssuesByStates` call received. */
+  byStatesArgs: string[][] = [];
   calls = { fetchCandidateIssues: 0, fetchIssueStatesByIds: 0, fetchIssuesByStates: 0 };
 
   async fetchCandidateIssues(): Promise<Issue[]> {
@@ -92,6 +95,8 @@ export class FakeTracker implements TrackerClient {
 
   async fetchIssuesByStates(stateNames: string[]): Promise<Issue[]> {
     this.calls.fetchIssuesByStates += 1;
+    this.byStatesArgs.push(stateNames);
+    if (this.failByStates) throw this.failByStates;
     if (stateNames.length === 0) return [];
     return this.candidates.filter((i) => stateNames.includes(i.state));
   }
