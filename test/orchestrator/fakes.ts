@@ -148,10 +148,13 @@ export class FakeAgentRunner implements AgentRunner {
   runs: Array<{ issue: Issue; attempt: number | null }> = [];
   status: RunAttempt["status"] = "succeeded";
   sessionId = "thread-1-turn-1";
+  /** When set, every `run` rejects with this error (simulates an agent crash). */
+  throwError: Error | null = null;
   private pending: Array<() => void> = [];
 
   async run(issueArg: Issue, attempt: number | null): Promise<RunAttempt & { session_id: string }> {
     this.runs.push({ issue: issueArg, attempt });
+    if (this.throwError) throw this.throwError;
     const result: RunAttempt & { session_id: string } = {
       issue_id: issueArg.id,
       issue_identifier: issueArg.identifier,

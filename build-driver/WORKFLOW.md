@@ -114,4 +114,19 @@ No description provided — read the linked task file under `docs/tasks/` in the
 - **Merging** → the PR is approved: perform the final landing (merge/rebase per repo
   conventions), then move the issue to **Done**.
 
+## Final report (post to Linear before moving to In Review)
+
+When the Definition of Done passes, post an **`## Implementation Report`** comment on this
+ticket via your `linear_graphql` tools (a `commentCreate` mutation), with exactly these
+three sections:
+
+- **Implemented** — what you built: the modules/files added or changed and the behavior.
+- **Tests added** — the test file(s) and the specific cases you added to the suite.
+- **Test behavior (functional)** — in plain language, what each test actually verifies
+  (given → when → then, not implementation detail) and the result of running them
+  (e.g. `npm test` → N passing / 0 failing).
+
+Keep each section to a few concise bullets. Post this report **before** you move the ticket
+to In Review, so the board reflects what shipped.
+
 Keep the `## Workpad` comment updated as a live checklist. Never log secrets.
