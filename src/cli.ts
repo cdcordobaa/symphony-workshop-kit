@@ -175,6 +175,10 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
     max_concurrent_agents: context.config.agent.max_concurrent_agents,
   });
 
+  // §8.6: sweep stale terminal-issue workspaces before the first tick. A tracker
+  // fetch failure inside is logged and swallowed, so startup always proceeds.
+  await orchestrator.cleanupTerminalWorkspaces();
+
   if (once) {
     // Deterministic FR20 proof: one immediate tick, then a graceful stop.
     await orchestrator.tick();
