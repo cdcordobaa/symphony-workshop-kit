@@ -28,10 +28,15 @@
  *     re-dispatched if still active/eligible with a free slot, requeued if no
  *     slot, or dropped (claim released) if the issue is missing/terminal.
  *
+ *   - **Per-state concurrency (§8.3 / ARK-57)**: on top of the global cap, an
+ *     issue in state `S` is dispatched only if the per-state cap
+ *     `agent.max_concurrent_agents_by_state[S]` also has a free slot (effective
+ *     availability `min(global, per_state[S])`). Enforced in {@link shouldDispatch}
+ *     via the running-map per-state counts.
+ *
  * Deferred (PRD §5.3, intentionally absent): continuation retries after a *clean*
- * turn, per-state concurrency caps, and stall detection. Persistence across
- * restarts is permanently out (§5.4) — all scheduler state, including retry
- * timers, is in-memory.
+ * turn and stall detection. Persistence across restarts is permanently out (§5.4)
+ * — all scheduler state, including retry timers, is in-memory.
  */
 
 import type {
@@ -438,6 +443,8 @@ export class Orchestrator {
       issue_id: issue.id,
       issue_identifier: issue.identifier,
       attempt,
+      // Tracked state at dispatch time drives per-state concurrency accounting (§8.3).
+      state: issue.state,
       workspace_path: this.workspaceManager.workspacePathFor(issue.identifier),
       started_at: this.now().toISOString(),
       session: null,
