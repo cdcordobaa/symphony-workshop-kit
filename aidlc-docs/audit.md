@@ -157,3 +157,11 @@
 **Context**: CONSTRUCTION → M1 COMPLETE. Remaining optional: truly-live run, Phase-2 Core Conformance, dogfood capstone.
 
 ---
+
+## Truly-live run — product reads real Notion + spawns a real agent, end-to-end
+**Timestamp**: 2026-07-09T00:05:00Z
+**User Input**: "yes, build it and do the live run" (+ provided a Notion integration token) / "but why, if the mcp is available globally"
+**AI Response**: "Explained the asymmetry: the claude.ai Notion connector serves Claude processes (this CLI + spawned agents), not the product's plain-Node daemon — so the daemon's READ path needs its own credential, while the agent's WRITE path rides its connector. Built RestNotionMcp (Notion REST + internal integration token, flattening to the existing NotionRawRow), wired into buildRuntime (token+db present → live transport), added unit tests + a WORKFLOW.md prompt update (agent reads ticket via Notion tools + sets Status Done). Stored the token in .env (gitignored, never committed/logged). Verified live: RestNotionMcp read DEV-1/DEV-2 from the real board; then `node src/index.ts ./WORKFLOW.md` ran the full daemon LIVE — dispatched DEV-1 (Todo) → spawned a real `claude -p` agent → agent wrote HELLO.md and set DEV-1 → Done via its connector → orchestrator reconciled (0 active). PR #8 merged to main. RUNBOOK §2A.10 documents the truly-live setup + the read/write credential asymmetry."
+**Context**: CONSTRUCTION → truly-live run complete. The Notion Symphony product genuinely reads a live board and spawns real agents end-to-end. (Token in chat history — consider rotating post-workshop.)
+
+---

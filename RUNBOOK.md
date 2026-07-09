@@ -276,8 +276,26 @@ ships, a green run ends with: 7 merged PRs (#1–#7), every ticket `Done`, and o
 clean + `npm test` green + `npm run smoke:e2e` printing the MVP-gate checks all PASS (candidate
 dispatched, workspace confined, agent wrote its file, reconciled at terminal, secret-safe). Tag the
 point (`run-<N>-mvp-gate`, Appendix E). The automated e2e proves the gate over live-captured tracker
-payloads through the real pipeline; for a **truly-live** demo, run the built product directly against
-the real board (`node dist/index.js ./WORKFLOW.md`) with a live tracker MCP server wired.
+payloads through the real pipeline.
+
+**2A.10 Truly-live run (against the real board).** The automated e2e substitutes the raw socket; to
+run the product *genuinely* live end-to-end:
+
+1. **Give the daemon its own read credential.** The product is a plain Node process — it cannot use
+   your `claude.ai` Notion connector (that's for Claude processes). Create a Notion **internal
+   integration** (Notion → Settings → Connections → develop your own integrations → new), copy the
+   `ntn_…` token, and **share the board page** with that integration (page ••• → Connections → add it).
+   Put `NOTION_API_KEY=ntn_…` and `NOTION_DATABASE_ID=<board db id>` in `.env` (gitignored).
+2. **Run the daemon:** `set -a; . ./.env; set +a && node dist/index.js ./WORKFLOW.md`. `buildRuntime`
+   auto-selects the live REST transport (`RestNotionMcp`) when a token + db id are present.
+3. **What happens:** the daemon polls the board via REST → finds an active ticket → spawns a real
+   Claude Code agent → the **agent** reads the ticket and writes state back via *its own* connector
+   (the agent IS a Claude process, so the connector works for the write path) → the daemon reconciles
+   when the ticket hits a terminal state.
+
+> Verified on this run: DEV-1 `Todo` → agent wrote `HELLO.md` → agent set DEV-1 `Done` via its
+> connector → daemon reconciled (`[symphony] 0 active`). The **read** path needs the integration
+> token; the **write** path rides the agent's connector — that asymmetry is the key operational fact.
 
 ### 2B — Drive with the OpenSymphony engine (Rust, alternative)
 
