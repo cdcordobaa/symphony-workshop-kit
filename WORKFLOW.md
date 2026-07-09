@@ -77,3 +77,8 @@ Description:
 
 Implement this issue to its acceptance criteria, with tests. Do not ask a human
 to perform follow-up actions; this is an unattended session.
+
+You have Notion tools available. The full task and acceptance criteria live on this
+issue's Notion page (see the URL above) — read them there with your Notion tools.
+When the work is complete, use your Notion tools to set **this issue's Status to a
+terminal state (`Done`)** so the orchestrator reconciles and stops the run.
