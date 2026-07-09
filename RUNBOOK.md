@@ -301,14 +301,38 @@ run the product *genuinely* live end-to-end:
 
 Full detail in `engine/engine-setup.md`; the short path:
 
-1. **Wire the engine** — edit `engine/WORKFLOW.md`: `tracker.project_slug` →
-   `$SYMPHONY_LINEAR_PROJECT_SLUG`; `hooks.after_create` clone URL → `$SYMPHONY_TARGET_REPO_URL`.
-   Leave the `claude:` block as-is (selects the experimental Claude harness).
-2. **Export env** — `set -a; . ./.env; set +a` (LINEAR_API_KEY + ANTHROPIC_API_KEY).
-3. **Preflight + run** — `opensymphony doctor --config "$PWD/engine/config.yaml"`, then
-   `cd engine && opensymphony run --config "$PWD/config.yaml"` (reads `WORKFLOW.md` from cwd).
-4. **Watch** — control plane `http://127.0.0.1:2468/`; `opensymphony tui --url http://127.0.0.1:2468`.
+1. **Wire the engine** — edit its `WORKFLOW.md`: `tracker.project_slug` → your project slug;
+   `hooks.after_create` clone URL → your target repo (use `https://…` for `gh`-authed clones).
+   **Select the Claude harness:** ensure a `claude:` block is present *instead of* an `openhands:`
+   block. If the workflow ships OpenHands-configured (`openhands:` + `${LLM_MODEL}`), replace that
+   block with, e.g.:
+   ```yaml
+   claude:
+     command: claude
+     permission_mode: bypassPermissions
+     verbose: true
+     session_reuse: per_issue
+     mcp:
+       linear: { enabled: true, api_key_env: LINEAR_API_KEY }
+   ```
+   The Claude harness needs only the `claude` CLI + `LINEAR_API_KEY` — **no OpenHands server and no
+   `LLM_*` key** (those are only for the OpenHands runtime). `doctor` then resolves without `LLM_MODEL`.
+2. **Export env** — `set -a; . ./.env; set +a` (LINEAR_API_KEY; `claude` authenticated).
+3. **Preflight + run** — `opensymphony doctor --config <config.yaml>`, then
+   `opensymphony run --config <config.yaml>` from the engine repo (reads `WORKFLOW.md` from cwd).
+4. **Watch** — the **FrankenTUI** is the GUI: `opensymphony tui --url http://127.0.0.1:2468`, run in a
+   **real terminal** (a full-screen app; it won't render through a pipe or a non-TTY shell). The
+   control plane at `:2468` is JSON-only (`GET /api/v1/snapshot` / `/events`). The TUI is a *client* of
+   `:2468` — if `opensymphony run` isn't up, the TUI is blank. `build-driver/watch-agents.py` also
+   streams the engine's agents (its `~/.opensymphony/workspaces/<ISSUE>` transcripts match).
 5. **Review & merge** — move approved issues to `Merging` (agent follows the `land` skill).
+
+> **Reading the TUI token counter (don't mistake it for billable tokens).** OpenSymphony's
+> `input_tokens` aggregates the *full* input via `usage.total_input()` = **fresh input + cache-read +
+> cache-write**, and the headline `total_tokens = input_tokens + output_tokens`. So `total_tokens`
+> **includes the cache** — that's why it can read ~15M while *fresh* input is ~76k. It's a throughput
+> number, not a cost. `cache_read_tokens` is shown separately; cache reads bill ~10× cheaper. Rough
+> effective spend ≈ `output` + `(input_tokens − cache_read)` at full price + `cache_read × 0.1`.
 
 > ✅ Done when the backlog has been implemented as merged PRs and your target repo is a working
 > Symphony implementation.
