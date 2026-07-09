@@ -26,6 +26,7 @@ import { createWorkspaceManager } from "./workspace/manager.js";
 import { createAgentRunner } from "./agent/runner.js";
 import { NotionTrackerClient } from "./tracker/notion-tracker-client.js";
 import { SqlNotionMcp, type NotionToolInvoker } from "./tracker/notion-mcp.js";
+import { RestNotionMcp } from "./tracker/notion-rest.js";
 import { TrackerError } from "./tracker/errors.js";
 import { createOrchestrator, Orchestrator } from "./orchestrator/index.js";
 import {
@@ -103,16 +104,24 @@ export function buildRuntime(
   const workspaceManager =
     overrides.workspaceManager ?? createWorkspaceManager({ config, logger });
 
-  const tracker =
-    overrides.tracker ??
-    new NotionTrackerClient({
-      transport: new SqlNotionMcp({
+  // Transport selection:
+  //  - a test invoker override → SQL transport over that invoker;
+  //  - a resolved Notion token (tracker.auth, e.g. $NOTION_API_KEY) → the live REST transport;
+  //  - otherwise the SQL transport over the fail-clear stub (no live socket wired).
+  const transport = overrides.notionInvoke
+    ? new SqlNotionMcp({
         dataSourceUrl: overrides.dataSourceUrl ?? `collection://${config.tracker.database_id}`,
-        invoke: overrides.notionInvoke ?? unwiredNotionInvoke,
-      }),
-      config,
-      logger,
-    });
+        invoke: overrides.notionInvoke,
+      })
+    : config.tracker.auth && config.tracker.database_id
+      ? new RestNotionMcp({ token: config.tracker.auth, databaseId: config.tracker.database_id })
+      : new SqlNotionMcp({
+          dataSourceUrl: overrides.dataSourceUrl ?? `collection://${config.tracker.database_id}`,
+          invoke: unwiredNotionInvoke,
+        });
+
+  const tracker =
+    overrides.tracker ?? new NotionTrackerClient({ transport, config, logger });
 
   const agentRunner =
     overrides.agentRunner ??
