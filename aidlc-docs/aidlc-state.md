@@ -71,7 +71,10 @@
         `test/observability/{redact,logger,status}.test.ts` + `helpers.ts`,
         `smoke/observability.ts`, and re-adds the `smoke:observability` script dropped by the
         reset. Branch `arkatechie/ark-60-observability-structured-logging-and-terminal-status`
-        off `bcc44ed`. `npm run verify` exits 0 (typecheck clean, build clean, **84/84** tests
+        off `bcc44ed`, commit `2301768`; PR
+        [#13](https://github.com/cdcordobaa/symphony-workshop-kit/pull/13) → `docs/lab-hand-driven-loop`
+        (verified `state=OPEN`, `mergeable=MERGEABLE`, 12 files, +2428/-6) — **awaiting review**.
+        `npm run verify` exits 0 (typecheck clean, build clean, **84/84** tests
         — 10 inherited from ARK-58 + 74 new); `npm run smoke:observability` exits 0 with all
         26 checks passing. Executed **by hand** per `docs/LAB-hand-driven-loop.md`, no driver.
   - [ ] SYM-002 / ARK-59 — unblocked by ARK-58, dispatchable next.
@@ -84,8 +87,12 @@
 - **Current stage**: SYM-003/**ARK-60** (observability) implemented on
   `arkatechie/ark-60-observability-structured-logging-and-terminal-status` off `bcc44ed`;
   `npm run verify` exits 0 (typecheck clean, build clean, **84/84** tests) and
-  `npm run smoke:observability` exits 0 (26/26 checks). The `Logger` and `StatusSurface` ports
-  now have real implementations, so SYM-004…007 can log against them instead of stubs.
+  `npm run smoke:observability` exits 0 (26/26 checks). PR
+  [#13](https://github.com/cdcordobaa/symphony-workshop-kit/pull/13) is **open and awaiting
+  review** — ARK-60 sits in `In Review`, which is in neither `active_states` nor
+  `terminal_states`, so it is deliberately invisible to a driver until a human merges it.
+  The `Logger` and `StatusSurface` ports now have real implementations, so SYM-004…007 can log
+  against them instead of stubs.
   Previously: SYM-001/**ARK-58** merged and Done. (Superseded:
   the TS18003 / `tests 0` baseline described below held only until ARK-58 landed.) Historic:
   awaiting first unit — The branch carries the plan (`aidlc-docs/inception/` +
