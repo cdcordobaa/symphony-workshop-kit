@@ -40,6 +40,19 @@ smoke/             # one runnable smoke per unit (see matrix below)
 Do **not** modify `aidlc-docs/`, `spec/`, `docs/tasks/`, `build-driver/`, or `engine/` unless your
 ticket explicitly says so — those are the plan and the build driver, not the product.
 
+**Two exceptions inside `aidlc-docs/`, and they are required, not optional.** Per-ticket *status*
+lives in Linear — but the milestone-level ledger must not be left saying something false:
+
+- **Before you write a line of code**, read `aidlc-docs/aidlc-state.md` (Current Status) and the
+  tail of `aidlc-docs/audit.md`. Known gotchas, the current branch baseline, and the open plan
+  defects are already recorded there. Entering through the ticket alone makes you re-derive them
+  — on the ARK-58 run that produced a "discovery" that both files already documented.
+- **Before you open the PR**, update `aidlc-docs/aidlc-state.md` (tick your unit, move Next stage,
+  add any plan defect you found) and append an entry to `aidlc-docs/audit.md` with the raw user
+  input and the read-backs that verify your work. Append to `audit.md` — never rewrite it.
+
+Amending `docs/tasks/` is still off-limits: record the defect, let a human decide.
+
 `src/domain/` is the innermost layer (§3.2). It contains **types and interfaces only**: every module
 under it must compile to an empty JS file. Later units depend inward onto it and never the reverse.
 
