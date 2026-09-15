@@ -1,0 +1,43 @@
+planningWave: symphony-mvp-walking-skeleton
+linearProject: symphony-d27271e017ad
+publishedAt: '2026-06-26T23:14:56.454801+00:00'
+milestones:
+  'M1: MVP Walking Skeleton':
+    milestoneId: e532ecfc-4773-41c8-a7df-9f1594fb9e5e
+    name: 'M1: MVP Walking Skeleton'
+tasks:
+  SYM-001:
+    issue: ARK-49
+    issueId: 6fd5edf7-046d-4152-b1a7-fe4be5a1a8f5
+    url: https://linear.app/arkatechie/issue/ARK-49/project-initialization-and-core-domain-models
+    file: docs/tasks/SYM-001-project-init-and-domain-models.md
+  SYM-002:
+    issue: ARK-50
+    issueId: 142ea91f-3a45-464c-9a7d-09c4dd865e48
+    url: https://linear.app/arkatechie/issue/ARK-50/workflow-loader-and-typed-config
+    file: docs/tasks/SYM-002-workflow-loader-and-config.md
+  SYM-003:
+    issue: ARK-51
+    issueId: 130c065b-f46e-425a-83b7-1800ab6a2372
+    url: https://linear.app/arkatechie/issue/ARK-51/observability-structured-logging-and-terminal-status
+    file: docs/tasks/SYM-003-observability-logging-and-status.md
+  SYM-004:
+    issue: ARK-52
+    issueId: ba7c07f7-4e92-441e-be99-4aa321c03855
+    url: https://linear.app/arkatechie/issue/ARK-52/notion-tracker-client-read-only-via-mcp
+    file: docs/tasks/SYM-004-notion-tracker-client.md
+  SYM-005:
+    issue: ARK-53
+    issueId: 8136c8b8-55d1-4bc9-87b7-2405c0ab98ca
+    url: https://linear.app/arkatechie/issue/ARK-53/workspace-manager-and-safety-invariants
+    file: docs/tasks/SYM-005-workspace-manager-and-safety.md
+  SYM-006:
+    issue: ARK-54
+    issueId: acd3b6c8-c2c6-41fd-973b-b5225443f9e8
+    url: https://linear.app/arkatechie/issue/ARK-54/agent-runner-claude-code-and-prompt-rendering
+    file: docs/tasks/SYM-006-agent-runner-and-prompt.md
+  SYM-007:
+    issue: ARK-55
+    issueId: 95abe017-24bf-4486-9c82-411ffb4ef758
+    url: https://linear.app/arkatechie/issue/ARK-55/orchestrator-reconciliation-and-clihost
+    file: docs/tasks/SYM-007-orchestrator-reconciliation-and-cli.md

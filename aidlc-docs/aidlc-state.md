@@ -35,7 +35,12 @@
 
 ### BRIDGE (workshop-specific, not a native AI-DLC stage)
 - [x] aidlc-to-tasks — working units → `docs/tasks/task-package.yaml` (7 tasks SYM-001…007, milestone M1; validator + dry-run exit 0)
-- [x] convert-tasks-to-linear — published to Linear project `symphony-d27271e017ad`: SYM-001→ARK-49 … SYM-007→ARK-55 (milestone M1). Mapping: `docs/tasks/linear-publish.yaml`
+- [x] convert-tasks-to-linear — **re-published 2026-09-14 to a NEW Linear project**
+  `symphony-orchestrator-notion-build-e555d457be74` ("Symphony Orchestrator (Notion) — Build",
+  team ARK): SYM-001→**ARK-58** … SYM-007→**ARK-64**, milestone `M1: MVP Walking Skeleton`.
+  Mapping: `docs/tasks/linear-publish.yaml`.
+  Superseded run: project `symphony-d27271e017ad` (SYM-001→ARK-49 … SYM-007→ARK-55, all Done from the
+  `main` build) — mapping archived at `docs/tasks/linear-publish.archive-symphony-d27271e017ad.yaml`.
 
 ### CONSTRUCTION
 > In this workshop, CONSTRUCTION is executed by the **OpenSymphony engine** driving Claude agents
@@ -50,9 +55,30 @@
   SYM-004 + SYM-007 carry required integration/e2e tests against a live Notion "Symphony Dev Board" —
   NOT deferred; the product's value is the Notion connection). Reference tag: `run-2-construction-baseline`.
 
+- [ ] Unit implementation — **NOT STARTED on this branch.** `src/`, `test/`, `smoke/`, and
+  `BUILD-CONTRACT.md` were removed on `docs/lab-hand-driven-loop` so the CONSTRUCTION phase is
+  implemented here from the plan + `docs/tasks/`. The completed M1 implementation is preserved on
+  `main` (PRs #1–#11 merged, `origin/main` @ `fae4857`); restore any path with
+  `git checkout main -- <path>`.
+
 ## Current Status
 
-- **Lifecycle phase**: CONSTRUCTION — ✅ **M1: MVP Walking Skeleton COMPLETE** (all 7 units merged to `main`)
-- **Current stage**: MVP gate GREEN. All 7 PRs (#1–#7) merged; ARK-49…ARK-55 all **Done**. On integrated `main`: `npm run build` clean, `npm test` = 167 pass / 1 skipped / 0 fail, `npm run smoke:e2e` = MVP walking skeleton PASS end-to-end (real Notion pipeline + confined workspace + agent HELLO.md + terminal reconcile). Driver stopped (no work left). Reference tag: `run-2-mvp-gate`.
-- **Next stage** (optional, post-MVP): (1) ✅ DONE — **truly-live run** executed: added `RestNotionMcp` (live Notion REST transport + integration token, PR #8) and ran `node dist/index.js ./WORKFLOW.md` against the real Dev Board — daemon read DEV-1 `Todo` via REST → spawned a real Claude Code agent → agent wrote `HELLO.md` and set DEV-1 `Done` via its connector → daemon reconciled (`0 active`). Read path uses the integration token; write path rides the agent's connector; (2) **Phase 2: Core Conformance Completion** — re-run INCEPTION for the PRD §5.3 deferred set (retry/backoff, continuation turns, stall detection, dynamic reload, startup cleanup, token accounting); (3) the **dogfood capstone** — point the built product at a Notion board of Phase-2 tickets so it drives its own next iteration
-- **Brief status**: 7 MVP issues live in Linear project `symphony-d27271e017ad` (ARK-49…ARK-55, milestone M1). SYM-001/Unit 1.1 = **ARK-49**, the unblocked root. Build-and-test approach defined in `construction/build-and-test/build-and-test-plan.md`: implementation is driven **only from OpenSymphony + Linear**, but **verification is against a real Notion board via MCP** (SYM-004/007 — required, not deferred). Only the dogfood capstone is deferred. Per-unit implementation is done by **symphony-claude ("Symphony Cloud")** driving Claude Code agents per Linear ticket — tracked in Linear, not here. **Target repo = THIS kit repo** (`cdcordobaa/symphony-workshop-kit`): the product is built here alongside the plan (greenfield `src/` at root). SYM-001/ARK-49 already scaffolded on origin branch `arkatechie/ark-49-sym-001-bootstrap-cli-and-config` (`src/domain`, `src/config`, `src/prompt`, `test/`) — but it uses **node:test** (not the planned vitest) and has **no BUILD-CONTRACT.md/smoke scripts**. Reconciliation DONE. **ARK-49 (SYM-001) merged to `main` and set Done** — PR #1 (`ef68aea`) integrated (domain types, config loader, prompt renderer, CLI skeleton, node:test suites); `npm ci && npm run build && npm test` = **47/47 green on main**. `construction-run-2` fast-forwarded into `main`, which now carries plan + `docs/tasks/` + `BUILD-CONTRACT.md` + `src/` + `test/`. **ARK-50…55 set to Todo**; the driver honors blocker eligibility (`dispatcher.ts` — Todo dispatches only when all blockers are terminal), so it will build in wave order (50,51 → 52,53 → 54 → 55) with ARK-55's real-Notion e2e as the MVP gate. Ready to start the driver.
+- **Lifecycle phase**: CONSTRUCTION — **implementation reset; not started on this branch**
+  (`docs/lab-hand-driven-loop`).
+- **Current stage**: awaiting first unit. The branch carries the plan (`aidlc-docs/inception/` +
+  `construction/build-and-test/build-and-test-plan.md`), the published backlog (`docs/tasks/` +
+  Linear), and the build harness only — `package.json`, `tsconfig.json`, `tsconfig.build.json`,
+  `WORKFLOW.md`. There is no `src/`, `test/`, or `smoke/`: verified on this branch, `npm run build`
+  exits non-zero with `error TS18003: No inputs were found` and `npm test` exits 0 with `tests 0`
+  — both expected until the first unit lands. The `smoke:*` npm scripts were removed with their
+  files; each unit re-adds its own per `build-and-test-plan.md` B2.
+- **Backlog**: 7 MVP units SYM-001…SYM-007 → **ARK-58…ARK-64** (milestone `M1: MVP Walking Skeleton`)
+  in Linear project **`symphony-orchestrator-notion-build-e555d457be74`**; mapping in
+  `docs/tasks/linear-publish.yaml`. SYM-001/**ARK-58** is the unblocked root; wave order
+  58 → (59, 60) → (61, 62) → 63 → **64** (MVP gate).
+  ⚠️ All 7 were created in **Backlog**. The driver dispatches only on `tracker.active_states`
+  (`Todo`, `In Progress`), so move them to **Todo** before starting a run or nothing is eligible.
+  The previous project `symphony-d27271e017ad` (ARK-49…55, Done) is superseded — leave it as the
+  record of the `main` build.
+- **Next stage**: implement SYM-001/**ARK-58** against `docs/tasks/SYM-001-project-init-and-domain-models.md`,
+  then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.

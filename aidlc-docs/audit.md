@@ -165,3 +165,17 @@
 **Context**: CONSTRUCTION → truly-live run complete. The Notion Symphony product genuinely reads a live board and spawns real agents end-to-end. (Token in chat history — consider rotating post-workshop.)
 
 ---
+## CONSTRUCTION Reset — implementation removed on `docs/lab-hand-driven-loop`
+**Timestamp**: 2026-09-14T00:00:00Z
+**User Input**: "I need to remove all of the construction phase. Science is what we are going to implement in this branch."
+**AI Response**: "Read as 'since that is what we are going to implement in this branch'. Asked one scoping question; user chose **Implementation only**. Removed `src/` (39 files), `test/` (31), `smoke/` (7), `BUILD-CONTRACT.md` — 78 files / 9,096 deletions staged — plus the gitignored `dist/`. Kept `package.json`, `package-lock.json`, `tsconfig.json`, `tsconfig.build.json`, root `WORKFLOW.md` (the B3 harness), and `construction/build-and-test/build-and-test-plan.md`. Dropped the seven `smoke:*` npm scripts with their files. Reset the CONSTRUCTION section + Current Status of `aidlc-state.md` to unstarted. Added RUNBOOK Appendix **D.4** (reset CONSTRUCTION only) with the live gotchas."
+**Context**: CONSTRUCTION reset for a fresh build on this branch. M1 implementation preserved on `main` (PRs #1–#11 verified MERGED via `gh pr list`; `origin/main` @ `fae4857`), restorable with `git checkout main -- <path>`. Verified post-reset: `npm run build` → `error TS18003: No inputs were found`; `npm test` → exit 0, `tests 0`. Not committed — working tree left staged for review.
+
+---
+## BRIDGE — convert-tasks-to-linear (apply) to a NEW Linear project
+**Timestamp**: 2026-09-14T00:00:00Z
+**User Input**: "I need to generate a plan and a list of tasks that I can manage from my Linear application. Help me create all the tasks and put them on Linear for this AI DLC plan." → (scope question interrupted) → "create a new project for this implementation"
+**AI Response**: "Created Linear project **Symphony Orchestrator (Notion) — Build** (`symphony-orchestrator-notion-build-e555d457be74`, id `da6af083-e596-4f45-a690-3aeed18c2025`, team ARK) via the Linear MCP, then archived the prior mapping to `docs/tasks/linear-publish.archive-symphony-d27271e017ad.yaml` so the converter would create fresh issues rather than update ARK-49…55 in place. Ran validate (7 tasks / 1 milestone / 5 waves, ok) → dry-run → apply. Created milestone `M1: MVP Walking Skeleton` and issues SYM-001→**ARK-58**, SYM-002→ARK-59, SYM-003→ARK-60, SYM-004→ARK-61, SYM-005→ARK-62, SYM-006→ARK-63, SYM-007→**ARK-64**. New mapping written to `docs/tasks/linear-publish.yaml`."
+**Context**: Backlog re-published for the branch rebuild after the CONSTRUCTION reset. Verified by reading Linear back (not the script's output): `list_issues` on the new project returns exactly 7 issues, all milestone M1, priorities/estimates set; `get_issue ARK-64 --includeRelations` confirms `blockedBy` = ARK-60, ARK-61, ARK-62, ARK-63 and cross-task references rewritten to real Linear URLs. All 7 issues are in **Backlog** status, which is NOT in `tracker.active_states` — they must be moved to `Todo` before a driver run.
+
+---

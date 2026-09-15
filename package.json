@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Symphony-spec orchestrator (Notion variant). U1 foundation: CLI/host lifecycle, WORKFLOW.md loader, typed config layer, shared domain types, and a strict prompt renderer.",
+  "description": "Symphony-spec orchestrator (Notion variant). Implementation lives in src/ \u2014 built during the CONSTRUCTION phase against docs/tasks/ + BUILD-CONTRACT.md.",
   "bin": {
     "symphony": "dist/index.js"
   },
@@ -17,13 +17,6 @@
     "start": "node --import tsx src/index.ts",
     "test": "node --import tsx --test \"test/**/*.test.ts\"",
     "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
-    "smoke:config": "tsx smoke/config.ts ./WORKFLOW.md",
-    "smoke:observability": "tsx smoke/observability.ts",
-    "smoke:tracker": "tsx smoke/tracker.ts",
-    "smoke:workspace": "tsx smoke/workspace.ts",
-    "smoke:agent": "tsx smoke/agent.ts",
-    "smoke:retry": "tsx smoke/retry.ts",
-    "smoke:e2e": "tsx smoke/e2e.ts",
     "verify": "npm run build && npm test"
   },
   "dependencies": {

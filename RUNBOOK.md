@@ -418,6 +418,33 @@ Begin a brand-new run while preserving the previous one. This is the path that p
 - **Re-implement a ticket:** move the Linear issue back to `Todo`; the engine re-claims it. Delete
   its workspace under `~/.opensymphony/workspaces/<ISSUE>/` for a clean clone.
 
+### D.4 Reset CONSTRUCTION only (keep the plan, rebuild the product)
+Use when the backlog and build-and-test plan are good but you want the implementation built again
+from scratch — a fresh driver run, or the hand-driven lab in `docs/LAB-hand-driven-loop.md`.
+
+```bash
+git switch -c <lab-or-run-branch>          # never do this on main
+git rm -r src test smoke BUILD-CONTRACT.md # the CONSTRUCTION deliverables
+rm -rf dist                                # gitignored build output
+```
+
+Keep `package.json`, `tsconfig.json`, `tsconfig.build.json` and root `WORKFLOW.md` — that is the
+harness pinned by decision **B3**, and starting from it saves the first ticket a bootstrap detour.
+Then drop the `smoke:*` entries from `package.json` (their files are gone; each unit re-adds its own
+per **B2**) and reset the CONSTRUCTION section of `aidlc-docs/aidlc-state.md` to unstarted.
+
+Gotchas seen live:
+- `BUILD-CONTRACT.md` is a **SYM-001 deliverable**, so removing it is consistent — but CLAUDE.md,
+  `build-driver/WORKFLOW.md` and the lab manual all instruct agents to read it. The first ticket must
+  recreate it before any later ticket runs, or those instructions dangle.
+- With no `src/`, `npm run build` exits non-zero (`error TS18003: No inputs were found`) and
+  `npm test` exits **0** with `tests 0` — a green `npm test` here means nothing. Don't read it as a
+  passing suite until the first unit lands.
+- Linear issues still say **Done** from the previous build. Move them back to `Todo` (D.3) or the
+  driver will find no eligible work.
+- The finished build stays on `main`: restore any file with `git checkout main -- <path>` and compare
+  your run against it.
+
 ## Appendix E — Reference points (branches & tags)
 
 Keep return points so you can compare runs, restart cleanly, or demo from a known state.
