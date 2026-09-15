@@ -368,6 +368,8 @@ Full rules: `.agents/skills/aidlc-to-tasks/SKILL.md`.
 | Driver went idle (`running: 0`) after a PR opened | Expected — the ticket is `In Review` (not terminal). Merge the PR to `main` and set the ticket **Done**; the next unit unblocks on the following poll (§2A.7). |
 | Dependent never starts though its blocker "looks done" | The blocker is `In Review`, not a terminal state. Merge its PR and move it to **Done** — dispatch requires blockers to be terminal. |
 | Ticket marked In Review but has no branch/PR | Stale state from an earlier run. Reset it to `Todo` so the driver rebuilds it (§2A.8). |
+| Driver polls but claims **nothing**, with a full backlog | `convert-tasks-to-linear apply` publishes issues in **`Backlog`**, which is not in `active_states` (`[Todo, In Progress, Merging]`). Bulk-move the wave to **`Todo`** after publishing — otherwise the driver looks hung on its very first tick. Verified on the ARK-58…64 re-publish (`8fceec4`). |
+| `npm test` green but a later unit won't compile | `tsx` **strips** types without checking them, and `build` covers `src/**` only — so `test/**` and `smoke/**` are type-checked by nothing. Run `npm run typecheck`; it is part of `verify` as of ARK-58. |
 
 ## Appendix C — Experimental harness caveats
 
