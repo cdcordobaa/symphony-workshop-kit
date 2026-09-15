@@ -17,6 +17,7 @@
     "start": "node --import tsx src/index.ts",
     "test": "node --import tsx --test \"test/**/*.test.ts\"",
     "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
+    "smoke:observability": "tsx smoke/observability.ts",
     "verify": "npm run typecheck && npm run build && npm test"
   },
   "dependencies": {
