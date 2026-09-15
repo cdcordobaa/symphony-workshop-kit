@@ -55,17 +55,26 @@
   SYM-004 + SYM-007 carry required integration/e2e tests against a live Notion "Symphony Dev Board" —
   NOT deferred; the product's value is the Notion connection). Reference tag: `run-2-construction-baseline`.
 
-- [ ] Unit implementation — **NOT STARTED on this branch.** `src/`, `test/`, `smoke/`, and
-  `BUILD-CONTRACT.md` were removed on `docs/lab-hand-driven-loop` so the CONSTRUCTION phase is
-  implemented here from the plan + `docs/tasks/`. The completed M1 implementation is preserved on
-  `main` (PRs #1–#11 merged, `origin/main` @ `fae4857`); restore any path with
-  `git checkout main -- <path>`.
+- [ ] Unit implementation — **IN PROGRESS on this branch: 1 of 7 units landed.** The completed M1
+  implementation is preserved on `main` (PRs #1–#11 merged, `origin/main` @ `fae4857`); restore any
+  path with `git checkout main -- <path>`.
+  - [x] **SYM-001 / ARK-58** — §4 domain models + the five port interfaces. PR
+        [#12](https://github.com/cdcordobaa/symphony-workshop-kit/pull/12) squash-merged into
+        `docs/lab-hand-driven-loop` @ `27116a1` (verified `state=MERGED`, `mergedAt`
+        2026-09-15T01:08:10Z); ARK-58 **Done** (`completedAt` 2026-09-15T01:08:11Z). Re-adds
+        `BUILD-CONTRACT.md`. On the merged branch `npm run verify` exits 0 (typecheck clean,
+        build clean, 10/10 tests) — the TS18003 baseline below is now superseded.
+        Executed **by hand** per `docs/LAB-hand-driven-loop.md`, no driver.
+  - [ ] SYM-002 / ARK-59 · SYM-003 / ARK-60 — both unblocked by ARK-58, dispatchable next.
+  - [ ] SYM-004 / ARK-61 · SYM-005 / ARK-62 · SYM-006 / ARK-63 · SYM-007 / ARK-64 (MVP gate).
 
 ## Current Status
 
-- **Lifecycle phase**: CONSTRUCTION — **implementation reset; not started on this branch**
-  (`docs/lab-hand-driven-loop`).
-- **Current stage**: awaiting first unit. The branch carries the plan (`aidlc-docs/inception/` +
+- **Lifecycle phase**: CONSTRUCTION — **in progress on this branch** (`docs/lab-hand-driven-loop`),
+  1 of 7 M1 units landed.
+- **Current stage**: SYM-001/**ARK-58** merged and Done; awaiting the second unit. (Superseded:
+  the TS18003 / `tests 0` baseline described below held only until ARK-58 landed.) Historic:
+  awaiting first unit — The branch carries the plan (`aidlc-docs/inception/` +
   `construction/build-and-test/build-and-test-plan.md`), the published backlog (`docs/tasks/` +
   Linear), and the build harness only — `package.json`, `tsconfig.json`, `tsconfig.build.json`,
   `WORKFLOW.md`. There is no `src/`, `test/`, or `smoke/`: verified on this branch, `npm run build`
@@ -80,5 +89,15 @@
   (`Todo`, `In Progress`), so move them to **Todo** before starting a run or nothing is eligible.
   The previous project `symphony-d27271e017ad` (ARK-49…55, Done) is superseded — leave it as the
   record of the `main` build.
-- **Next stage**: implement SYM-001/**ARK-58** against `docs/tasks/SYM-001-project-init-and-domain-models.md`,
+- **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
   then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
+- **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
+  1. `SYM-001` AC says `Issue` exposes *"exactly"* the seven FR5 fields; SPEC §4.1.1 defines
+     twelve. Implemented the full entity — the literal reading breaks ARK-63 (strict Liquid,
+     §12.2) and ARK-64 (`created_at` sorting, §8.2). AC should read *"at least"*.
+  2. `SYM-001` Deliverables say *"the eight §4 entities"* while its own Out-of-scope defers
+     §4.1.6 Live Session and §4.1.7 Retry Entry. Should say **six**.
+  3. `SYM-001` AC *"`npm test` runs and exits 0"* is vacuously true against an empty suite.
+     Every unit's AC should require at least one real assertion.
+  4. `BUILD-CONTRACT.md` is required by `build-driver/WORKFLOW.md` and cited by every later
+     ticket's DoD, but appears in no task file's Deliverables. Added to SYM-001 in practice.
