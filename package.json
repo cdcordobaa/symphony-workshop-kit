@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Symphony-spec orchestrator (Notion variant). Implementation lives in src/ \u2014 built during the CONSTRUCTION phase against docs/tasks/ + BUILD-CONTRACT.md.",
+  "description": "Symphony-spec orchestrator (Notion variant). Implementation lives in src/ — built during the CONSTRUCTION phase against docs/tasks/ + BUILD-CONTRACT.md.",
   "bin": {
     "symphony": "dist/index.js"
   },
@@ -17,7 +17,7 @@
     "start": "node --import tsx src/index.ts",
     "test": "node --import tsx --test \"test/**/*.test.ts\"",
     "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
-    "verify": "npm run build && npm test"
+    "verify": "npm run typecheck && npm run build && npm test"
   },
   "dependencies": {
     "liquidjs": "^10.21.0",
