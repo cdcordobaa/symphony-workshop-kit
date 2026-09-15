@@ -55,7 +55,7 @@
   SYM-004 + SYM-007 carry required integration/e2e tests against a live Notion "Symphony Dev Board" —
   NOT deferred; the product's value is the Notion connection). Reference tag: `run-2-construction-baseline`.
 
-- [ ] Unit implementation — **IN PROGRESS on this branch: 1 of 7 units landed.** The completed M1
+- [ ] Unit implementation — **IN PROGRESS on this branch: 2 of 7 units landed.** The completed M1
   implementation is preserved on `main` (PRs #1–#11 merged, `origin/main` @ `fae4857`); restore any
   path with `git checkout main -- <path>`.
   - [x] **SYM-001 / ARK-58** — §4 domain models + the five port interfaces. PR
@@ -65,14 +65,28 @@
         `BUILD-CONTRACT.md`. On the merged branch `npm run verify` exits 0 (typecheck clean,
         build clean, 10/10 tests) — the TS18003 baseline below is now superseded.
         Executed **by hand** per `docs/LAB-hand-driven-loop.md`, no driver.
-  - [ ] SYM-002 / ARK-59 · SYM-003 / ARK-60 — both unblocked by ARK-58, dispatchable next.
+  - [x] **SYM-003 / ARK-60** — observability: structured logger + terminal status surface,
+        implementing the `Logger` / `StatusSurface` ports (§13.1, §13.2, §13.4). Adds
+        `src/observability/{redact,logger,status,index}.ts`,
+        `test/observability/{redact,logger,status}.test.ts` + `helpers.ts`,
+        `smoke/observability.ts`, and re-adds the `smoke:observability` script dropped by the
+        reset. Branch `arkatechie/ark-60-observability-structured-logging-and-terminal-status`
+        off `bcc44ed`. `npm run verify` exits 0 (typecheck clean, build clean, **84/84** tests
+        — 10 inherited from ARK-58 + 74 new); `npm run smoke:observability` exits 0 with all
+        26 checks passing. Executed **by hand** per `docs/LAB-hand-driven-loop.md`, no driver.
+  - [ ] SYM-002 / ARK-59 — unblocked by ARK-58, dispatchable next.
   - [ ] SYM-004 / ARK-61 · SYM-005 / ARK-62 · SYM-006 / ARK-63 · SYM-007 / ARK-64 (MVP gate).
 
 ## Current Status
 
 - **Lifecycle phase**: CONSTRUCTION — **in progress on this branch** (`docs/lab-hand-driven-loop`),
-  1 of 7 M1 units landed.
-- **Current stage**: SYM-001/**ARK-58** merged and Done; awaiting the second unit. (Superseded:
+  2 of 7 M1 units landed.
+- **Current stage**: SYM-003/**ARK-60** (observability) implemented on
+  `arkatechie/ark-60-observability-structured-logging-and-terminal-status` off `bcc44ed`;
+  `npm run verify` exits 0 (typecheck clean, build clean, **84/84** tests) and
+  `npm run smoke:observability` exits 0 (26/26 checks). The `Logger` and `StatusSurface` ports
+  now have real implementations, so SYM-004…007 can log against them instead of stubs.
+  Previously: SYM-001/**ARK-58** merged and Done. (Superseded:
   the TS18003 / `tests 0` baseline described below held only until ARK-58 landed.) Historic:
   awaiting first unit — The branch carries the plan (`aidlc-docs/inception/` +
   `construction/build-and-test/build-and-test-plan.md`), the published backlog (`docs/tasks/` +
@@ -89,8 +103,10 @@
   (`Todo`, `In Progress`), so move them to **Todo** before starting a run or nothing is eligible.
   The previous project `symphony-d27271e017ad` (ARK-49…55, Done) is superseded — leave it as the
   record of the `main` build.
-- **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
-  then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
+- **Next stage**: implement **SYM-002/ARK-59** (`WORKFLOW.md` loader + typed config — the last
+  wave-1 unit, and the layer that will register the resolved tracker token with the observability
+  `SecretRegistry`), then proceed in wave order to the real-Notion e2e MVP gate at
+  SYM-007/**ARK-64**.
 - **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
   1. `SYM-001` AC says `Issue` exposes *"exactly"* the seven FR5 fields; SPEC §4.1.1 defines
      twelve. Implemented the full entity — the literal reading breaks ARK-63 (strict Liquid,
@@ -101,3 +117,20 @@
      Every unit's AC should require at least one real assertion.
   4. `BUILD-CONTRACT.md` is required by `build-driver/WORKFLOW.md` and cited by every later
      ticket's DoD, but appears in no task file's Deliverables. Added to SYM-001 in practice.
+- **Open plan defects raised by the ARK-60 run** (not yet applied to `docs/tasks/`):
+  5. `SYM-003`'s Test Plan cites only `npm test` and `npm run build`, but `BUILD-CONTRACT.md`'s
+     Definition of Done also REQUIRES `npm run typecheck` and `npm run smoke:<unit>`. Typecheck is
+     the only thing that checks `test/**` and `smoke/**` (they run under `tsx`, which strips types
+     without checking them), so an agent following the task file alone under-verifies the exact
+     place port conformance lives. Every unit's Test Plan should name all four commands.
+  6. `SYM-003`'s Out-of-scope defers §13.5 token/runtime/rate-limit accounting but says nothing
+     about §13.3's runtime snapshot interface, which is OPTIONAL-but-RECOMMENDED and depends on
+     that same deferred accounting (`codex_totals`, `rate_limits`, per-row `turn_count`). Treated
+     as out of scope for this ticket; the list should say so explicitly rather than leave it to
+     inference.
+  7. Neither `SYM-003` nor any other task file assigns an owner for *registering* secret literals
+     with the redaction layer. FR21 is stated as an observability criterion ("no secret values
+     appear in any log output"), but only the config layer ever holds the resolved `$VAR`
+     plaintext (§6.4), so the guarantee is split across two units. Implemented as a shared
+     `SecretRegistry` that ARK-59 must populate — SYM-002's scope should state that obligation,
+     or FR21 is nobody's job at the seam.
