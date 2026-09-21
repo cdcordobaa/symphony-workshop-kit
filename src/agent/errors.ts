@@ -18,6 +18,8 @@ export type AgentErrorCode =
   | "prompt_render_error"
   /** The turn exceeded `agent.turn_timeout_ms`. */
   | "turn_timeout"
+  /** No agent output was seen for `agent.stall_timeout_ms` — the run stalled (§8.5 Part A). */
+  | "turn_stalled"
   /** The subprocess exited before emitting a terminal turn result. */
   | "port_exit"
   /** The turn produced a failure result (`is_error` / error subtype). */

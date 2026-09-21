@@ -14,12 +14,16 @@
  *      `session_id = "<thread_id>-<turn_id>"` (§10.2–§10.4, FR16).
  *   6. Map the terminal result to success/failure. A user-input-required signal is
  *      a hard failure under the high-trust posture (§10.5, D5).
+ *   7. Enforce **stall detection** (§8.5 Part A, §10.6): a run that emits no parsed
+ *      stream event for `agent.stall_timeout_ms` is terminated and mapped to a
+ *      `turn_stalled` failure. The inactivity window resets on every event, and
+ *      `stall_timeout_ms <= 0` disables detection entirely.
  *
  * On ANY error the attempt fails (a failed {@link RunAttempt} is returned, never
  * thrown) so the orchestrator decides retry behavior (§10.7 step 5, §12.4).
  *
  * Deferred to later units (PRD §5.3): multi-turn continuation up to `max_turns`,
- * retry/backoff, stall detection, and token/runtime accounting.
+ * retry/backoff, and token/runtime accounting.
  */
 
 import { spawn as spawnChild } from "node:child_process";
@@ -61,6 +65,15 @@ export type Spawner = (
   options: { cwd: string },
 ) => AgentProcess;
 
+/** Opaque handle returned by {@link SetTimer}; only ever passed back to {@link ClearTimer}. */
+export type AgentTimerHandle = unknown;
+
+/** Arms a one-shot timer. Injectable so stall detection is deterministic in tests. */
+export type SetTimer = (fn: () => void, ms: number) => AgentTimerHandle;
+
+/** Cancels a timer previously armed by a {@link SetTimer}. */
+export type ClearTimer = (handle: AgentTimerHandle) => void;
+
 /** Default spawner: real `bash -lc` subprocess with piped stdio. */
 const defaultSpawner: Spawner = (command, args, options) =>
   spawnChild(command, [...args], {
@@ -72,7 +85,10 @@ const defaultSpawner: Spawner = (command, args, options) =>
 
 /** Dependencies for {@link createAgentRunner}. */
 export interface AgentRunnerDeps {
-  /** Typed runtime config; `agent.command` + `agent.turn_timeout_ms` are consulted. */
+  /**
+   * Typed runtime config; `agent.command`, `agent.turn_timeout_ms` and
+   * `agent.stall_timeout_ms` are consulted.
+   */
   config: ServiceConfig;
   /** Per-issue workspace manager (create/reuse + the canonical workspace path). */
   workspaceManager: WorkspaceManager;
@@ -84,6 +100,10 @@ export interface AgentRunnerDeps {
   onEvent?: (event: AgentEvent) => void;
   /** Injectable spawner (tests). Defaults to a real `bash -lc` subprocess. */
   spawn?: Spawner;
+  /** Injectable stall timer (tests). Defaults to `setTimeout`. */
+  setTimer?: SetTimer;
+  /** Cancels a {@link setTimer} handle (tests). Defaults to `clearTimeout`. */
+  clearTimer?: ClearTimer;
 }
 
 /** A {@link RunAttempt} plus the derived coding-agent `session_id` (§10.2). */
@@ -122,6 +142,9 @@ export function buildClaudeInvocation(command: string): string {
 export function createAgentRunner(deps: AgentRunnerDeps): ClaudeAgentRunner {
   const { config, workspaceManager, promptTemplate, logger, onEvent } = deps;
   const spawn = deps.spawn ?? defaultSpawner;
+  const setTimer: SetTimer = deps.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
+  const clearTimer: ClearTimer =
+    deps.clearTimer ?? ((handle) => clearTimeout(handle as ReturnType<typeof setTimeout>));
 
   async function run(issue: Issue, attempt: number | null): Promise<AgentRunResult> {
     const started_at = new Date().toISOString();
@@ -179,10 +202,13 @@ export function createAgentRunner(deps: AgentRunnerDeps): ClaudeAgentRunner {
       cwd: workspacePath,
       prompt,
       turnTimeoutMs: config.agent.turn_timeout_ms,
+      stallTimeoutMs: config.agent.stall_timeout_ms,
       base,
       workspacePath,
       log,
       onEvent,
+      setTimer,
+      clearTimer,
     });
   }
 
@@ -199,14 +225,21 @@ interface SpawnRunArgs {
   cwd: string;
   prompt: string;
   turnTimeoutMs: number;
+  /** `agent.stall_timeout_ms`; `<= 0` (or absent) disables stall detection (§5.3). */
+  stallTimeoutMs: number;
   base: { issue_id: string; issue_identifier: string; attempt: number | null; started_at: string };
   workspacePath: string;
   log?: Logger;
   onEvent?: (event: AgentEvent) => void;
+  setTimer: SetTimer;
+  clearTimer: ClearTimer;
 }
 
 function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
   const { spawn, invocation, cwd, prompt, turnTimeoutMs, base, workspacePath, log, onEvent } = args;
+  const { stallTimeoutMs, setTimer, clearTimer } = args;
+  /** Stall detection is opt-out: a non-positive (or missing) threshold disables it (§8.5 Part A). */
+  const stallEnabled = typeof stallTimeoutMs === "number" && stallTimeoutMs > 0;
 
   return new Promise<AgentRunResult>((resolve) => {
     let threadId: string | undefined;
@@ -215,6 +248,7 @@ function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
     let terminalMessage: string | undefined;
     let inputRequired = false;
     let timedOut = false;
+    let stalled = false;
     let settled = false;
     let stdoutBuffer = "";
 
@@ -226,6 +260,7 @@ function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
       if (settled) return;
       settled = true;
       if (timer) clearTimeout(timer);
+      disarmStall();
       const session_id = deriveSessionId(threadId, turnId);
       if (status === "succeeded") {
         log?.info("agent turn completed", {
@@ -248,6 +283,46 @@ function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
 
     let timer: ReturnType<typeof setTimeout> | undefined;
 
+    /* ----------------------------------------------------------------------- *
+     * Stall detection (§8.5 Part A) — distinct from `turn_timeout_ms`, which
+     * bounds the WHOLE turn. This bounds the gap between consecutive parsed
+     * stream events: the window is armed at launch (measured from `started_at`,
+     * per §8.5) and re-armed on every event, so it can never fire while output
+     * is flowing. On expiry the child is terminated and the attempt fails with
+     * the distinct `turn_stalled` reason.
+     * ----------------------------------------------------------------------- */
+
+    let stallTimer: AgentTimerHandle | undefined;
+
+    const disarmStall = (): void => {
+      if (stallTimer === undefined) return;
+      clearTimer(stallTimer);
+      stallTimer = undefined;
+    };
+
+    const onStall = (): void => {
+      if (settled) return;
+      stalled = true;
+      log?.warn("agent run stalled", {
+        session_id: deriveSessionId(threadId, turnId),
+        action: "agent_stall",
+        stall_timeout_ms: stallTimeoutMs,
+      });
+      try {
+        proc.kill("SIGTERM"); // never leave a silent run hanging until turn_timeout_ms
+      } catch {
+        /* best effort */
+      }
+      finish("failed", "turn_stalled", `no agent output for ${stallTimeoutMs}ms`);
+    };
+
+    /** (Re)start the inactivity window. Called at launch and on every event. */
+    const armStall = (): void => {
+      if (!stallEnabled || settled) return;
+      disarmStall();
+      stallTimer = setTimer(onStall, stallTimeoutMs);
+    };
+
     let proc: AgentProcess;
     try {
       proc = spawn("bash", ["-lc", invocation], { cwd });
@@ -269,7 +344,10 @@ function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
           }, turnTimeoutMs)
         : undefined;
 
+    armStall(); // elapsed is measured from launch until the first event arrives (§8.5)
+
     const handleEvent = (event: AgentEvent): void => {
+      armStall(); // output is flowing — restart the inactivity window (§8.5 Part A)
       if (event.session_id && !threadId) threadId = event.session_id;
       if (event.turn_id) turnId = event.turn_id; // terminal result's uuid wins (arrives last)
       const session_id = deriveSessionId(threadId, turnId);
@@ -325,7 +403,7 @@ function spawnAndRun(args: SpawnRunArgs): Promise<AgentRunResult> {
 
     proc.on("close", (code) => {
       if (stdoutBuffer.trim().length > 0) handleLine(stdoutBuffer); // flush trailing line
-      if (timedOut) return; // already finished by the timeout path
+      if (timedOut || stalled) return; // already finished by the timeout / stall path
       if (inputRequired) {
         finish("failed", "turn_input_required", "agent requested user input (high-trust hard fail)");
         return;
