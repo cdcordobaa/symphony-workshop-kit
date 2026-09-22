@@ -89,6 +89,25 @@
   (`Todo`, `In Progress`), so move them to **Todo** before starting a run or nothing is eligible.
   The previous project `symphony-d27271e017ad` (ARK-49…55, Done) is superseded — leave it as the
   record of the `main` build.
+- **Out-of-band demo ticket**: **ARK-65** "Demo: helloWorld() log function" — a two-file demo
+  (`src/demo/hello-world.ts` + `test/demo/hello-world.test.ts`) created to exercise the
+  orchestration loop end to end. It is **not** one of the seven M1 units, has **no** `docs/tasks/`
+  task file, and no row in the `BUILD-CONTRACT.md` smoke matrix; its own Out-of-scope list forbids
+  adding a `smoke:*` script. It therefore does **not** advance the M1 unit checklist above — no
+  unit checkbox is ticked for it. Implemented on branch
+  `arkatechie/ark-65-demo-helloworld-log-function` off `docs/lab-hand-driven-loop` @ `bcc44ed`.
+  Post-change on that branch: `npm run typecheck` clean, `npm run build` clean, `npm test`
+  **11 pass / 0 fail / 0 skipped** (baseline was 10/10 — nothing weakened).
+- **Out-of-band demo ticket**: **ARK-66** "Demo: helloSymphony() log function" — the sibling of
+  ARK-65 above (`src/demo/hello-symphony.ts` + `test/demo/hello-symphony.test.ts`), same shape and
+  same exemptions: not an M1 unit, no `docs/tasks/` task file, no smoke-matrix row, no unit
+  checkbox ticked. Together the two tickets add a `src/demo/` tree that sits outside the
+  `BUILD-CONTRACT.md` project layout and depends on nothing — read it as loop instrumentation, not
+  product surface, and do not treat `src/demo/` as a precedent for later units. Implemented on
+  branch `arkatechie/ark-66-demo-hellosymphony-log-function`; ARK-65 landed first, so this branch
+  merged `docs/lab-hand-driven-loop` @ `6b1a8a3` and resolved the expected additive conflict in
+  this file and in `audit.md` (both sides kept). Post-merge: `npm run typecheck` clean,
+  `npm run build` clean, `npm test` **12 pass / 0 fail / 0 skipped** (10 baseline + ARK-65 + ARK-66).
 - **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
   then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
 - **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
@@ -101,13 +120,13 @@
      Every unit's AC should require at least one real assertion.
   4. `BUILD-CONTRACT.md` is required by `build-driver/WORKFLOW.md` and cited by every later
      ticket's DoD, but appears in no task file's Deliverables. Added to SYM-001 in practice.
-
-- **Out-of-band demo tickets (not M1 units, no `docs/tasks/` file, no wave position)**: **ARK-65**
-  (`src/demo/hello-world.ts`) and **ARK-66** (`src/demo/hello-symphony.ts`) exist only to exercise
-  the orchestration loop end to end. They add a `src/demo/` tree that is outside the
-  `BUILD-CONTRACT.md` project layout and depends on nothing — read them as loop instrumentation,
-  not product surface, and do not treat `src/demo/` as a precedent for later units.
-  - **ARK-66** landed the `helloSymphony()` log function + its `node:test` spec. On this branch
-    `npm run typecheck` / `npm run build` are clean and `npm test` is 11/11 (was 10/10); nothing
-    skipped. Per the ticket, no `smoke:*` script was added — that DoD row does not apply to a demo
-    log function, which is the one deviation from the generic per-ticket bar.
+  5. **Raised by the ARK-65 run**: the repo-wide DoD in `BUILD-CONTRACT.md` requires
+     `npm run smoke:<unit>` for *every* ticket, but its smoke matrix enumerates SYM-001…SYM-007
+     only. A ticket outside that package (ARK-65) cannot satisfy the clause, and ARK-65's own
+     Out-of-scope explicitly forbids a new `smoke:*` script. The DoD should scope the smoke
+     requirement to tickets that have a matrix row. Resolved in favour of the ticket for this run;
+     `docs/tasks/` and `BUILD-CONTRACT.md` left unamended for a human to decide.
+  6. **Raised by the ARK-65 run**: a fresh workspace clone has no `node_modules`, so `npm test`
+     fails with `ERR_MODULE_NOT_FOUND: Cannot find package 'tsx'` before any ticket work begins.
+     `npm ci` is an unstated prerequisite of the script contract; worth naming in
+     `BUILD-CONTRACT.md` so it is not re-diagnosed as a repo defect each run.
