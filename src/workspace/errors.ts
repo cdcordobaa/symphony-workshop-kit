@@ -17,7 +17,11 @@ export type WorkspaceErrorCode =
   /** Invariant C (§9.5.3): the identifier could not be sanitized to a usable key. */
   | "safety_invalid_key"
   /** A filesystem operation (stat/mkdir/rm) failed unexpectedly. */
-  | "workspace_io_error";
+  | "workspace_io_error"
+  /** A workspace lifecycle hook (§9.4) exited non-zero or could not be spawned. */
+  | "hook_failed"
+  /** A workspace lifecycle hook (§9.4) was still running at `hooks.timeout_ms`. */
+  | "hook_timeout";
 
 /** A typed workspace failure. Safety-invariant violations use the `safety_*` codes. */
 export class WorkspaceError extends Error {
