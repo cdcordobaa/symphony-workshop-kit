@@ -108,6 +108,18 @@
   merged `docs/lab-hand-driven-loop` @ `6b1a8a3` and resolved the expected additive conflict in
   this file and in `audit.md` (both sides kept). Post-merge: `npm run typecheck` clean,
   `npm run build` clean, `npm test` **12 pass / 0 fail / 0 skipped** (10 baseline + ARK-65 + ARK-66).
+- **Out-of-band demo ticket**: **ARK-67** "Demo: greetSymphony() — depends on ARK-66" — the third
+  demo file, and the one that carries information the other two do not: it is the **blocker-chain
+  probe**. `src/demo/greet-symphony.ts` imports `helloSymphony` from `./hello-symphony.js` and calls
+  it once, so it cannot compile until ARK-66 has landed; `test/demo/greet-symphony.test.ts` asserts
+  the log happens exactly once **and** that `greetSymphony` prints nothing itself. Same exemptions as
+  ARK-65/66: not an M1 unit, no `docs/tasks/` task file, no smoke-matrix row, no unit checkbox
+  ticked. Implemented on branch `arkatechie/ark-67-demo-greetsymphony-depends-on-ark-66` off
+  `docs/lab-hand-driven-loop` @ `38125ec` (the ARK-66 merge, PR #16), which is what made the ticket's
+  Definition of Ready true. Post-change: `npm run typecheck` clean, `npm run build` clean, `npm test`
+  **13 pass / 0 fail / 0 skipped** (12 baseline + ARK-67 — nothing weakened). With this ticket
+  `src/demo/` reaches three files; it is still loop instrumentation sitting outside the
+  `BUILD-CONTRACT.md` project layout, and still not a precedent for later units.
 - **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
   then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
 - **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
