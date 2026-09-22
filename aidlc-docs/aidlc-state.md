@@ -89,6 +89,15 @@
   (`Todo`, `In Progress`), so move them to **Todo** before starting a run or nothing is eligible.
   The previous project `symphony-d27271e017ad` (ARK-49…55, Done) is superseded — leave it as the
   record of the `main` build.
+- **Out-of-band demo ticket**: **ARK-65** "Demo: helloWorld() log function" — a two-file demo
+  (`src/demo/hello-world.ts` + `test/demo/hello-world.test.ts`) created to exercise the
+  orchestration loop end to end. It is **not** one of the seven M1 units, has **no** `docs/tasks/`
+  task file, and no row in the `BUILD-CONTRACT.md` smoke matrix; its own Out-of-scope list forbids
+  adding a `smoke:*` script. It therefore does **not** advance the M1 unit checklist above — no
+  unit checkbox is ticked for it. Implemented on branch
+  `arkatechie/ark-65-demo-helloworld-log-function` off `docs/lab-hand-driven-loop` @ `bcc44ed`.
+  Post-change on that branch: `npm run typecheck` clean, `npm run build` clean, `npm test`
+  **11 pass / 0 fail / 0 skipped** (baseline was 10/10 — nothing weakened).
 - **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
   then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
 - **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
@@ -101,3 +110,13 @@
      Every unit's AC should require at least one real assertion.
   4. `BUILD-CONTRACT.md` is required by `build-driver/WORKFLOW.md` and cited by every later
      ticket's DoD, but appears in no task file's Deliverables. Added to SYM-001 in practice.
+  5. **Raised by the ARK-65 run**: the repo-wide DoD in `BUILD-CONTRACT.md` requires
+     `npm run smoke:<unit>` for *every* ticket, but its smoke matrix enumerates SYM-001…SYM-007
+     only. A ticket outside that package (ARK-65) cannot satisfy the clause, and ARK-65's own
+     Out-of-scope explicitly forbids a new `smoke:*` script. The DoD should scope the smoke
+     requirement to tickets that have a matrix row. Resolved in favour of the ticket for this run;
+     `docs/tasks/` and `BUILD-CONTRACT.md` left unamended for a human to decide.
+  6. **Raised by the ARK-65 run**: a fresh workspace clone has no `node_modules`, so `npm test`
+     fails with `ERR_MODULE_NOT_FOUND: Cannot find package 'tsx'` before any ticket work begins.
+     `npm ci` is an unstated prerequisite of the script contract; worth naming in
+     `BUILD-CONTRACT.md` so it is not re-diagnosed as a repo defect each run.
