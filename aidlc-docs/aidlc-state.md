@@ -101,3 +101,13 @@
      Every unit's AC should require at least one real assertion.
   4. `BUILD-CONTRACT.md` is required by `build-driver/WORKFLOW.md` and cited by every later
      ticket's DoD, but appears in no task file's Deliverables. Added to SYM-001 in practice.
+
+- **Out-of-band demo tickets (not M1 units, no `docs/tasks/` file, no wave position)**: **ARK-65**
+  (`src/demo/hello-world.ts`) and **ARK-66** (`src/demo/hello-symphony.ts`) exist only to exercise
+  the orchestration loop end to end. They add a `src/demo/` tree that is outside the
+  `BUILD-CONTRACT.md` project layout and depends on nothing — read them as loop instrumentation,
+  not product surface, and do not treat `src/demo/` as a precedent for later units.
+  - **ARK-66** landed the `helloSymphony()` log function + its `node:test` spec. On this branch
+    `npm run typecheck` / `npm run build` are clean and `npm test` is 11/11 (was 10/10); nothing
+    skipped. Per the ticket, no `smoke:*` script was added — that DoD row does not apply to a demo
+    log function, which is the one deviation from the generic per-ticket bar.
