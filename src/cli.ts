@@ -6,6 +6,11 @@
  * (observability → tracker → workspace → agent → orchestrator), start the poll
  * loop with its immediate first tick, and shut down gracefully on SIGINT/SIGTERM.
  *
+ * While running as a daemon the host also watches the loaded `WORKFLOW.md` (§6.2):
+ * a valid edit is re-parsed, re-resolved, re-validated, and pushed into the live
+ * orchestrator without a restart; an invalid edit is rejected with an
+ * operator-visible error and the previous good config keeps running.
+ *
  * Two run modes:
  *   - default: run until a shutdown signal (or an injected `runUntil` promise),
  *     then drain and stop cleanly.
@@ -20,6 +25,7 @@
  * daemon degrades to skipped ticks rather than crashing (NFR reliability).
  */
 
+import { createConfigWatcher, type WorkflowWatch } from "./config/watcher.js";
 import { createLogger, streamSink } from "./observability/logger.js";
 import { createStatusSurface } from "./observability/status.js";
 import { createWorkspaceManager } from "./workspace/manager.js";
@@ -146,6 +152,12 @@ export function buildRuntime(
 export interface RunCliOptions extends RuntimeOverrides {
   io?: HostIo;
   /**
+   * Injected `WORKFLOW.md` watch seam (§6.2 / DEV-5). Production leaves this unset
+   * and gets the real `fs.watch`-backed watcher; tests pass a fake so a reload can
+   * be triggered deterministically instead of waiting on a filesystem event.
+   */
+  watch?: WorkflowWatch;
+  /**
    * When provided (and not `--once`), the daemon runs until this promise settles
    * instead of installing real OS signal handlers. Tests resolve it to trigger a
    * graceful shutdown deterministically.
@@ -187,9 +199,26 @@ export async function runCli(argv: string[], options: RunCliOptions = {}): Promi
     return ExitCode.OK;
   }
 
+  // §6.2: watch the loaded workflow and push accepted reloads into the live loop.
+  // A malformed or invalid edit is rejected by the watcher (logged, previous config
+  // kept) and never reaches `applyConfig`, so a bad edit cannot take the daemon down.
+  const configWatcher = createConfigWatcher({
+    path: context.path,
+    initial: { config: context.config, promptTemplate: context.promptTemplate },
+    env: io?.env ?? process.env,
+    logger,
+    watch: options.watch,
+    onReload: (snapshot) => orchestrator.applyConfig(snapshot.config),
+  });
+  configWatcher.start();
+
   orchestrator.start(); // immediate first tick + interval loop (FR6)
 
-  await (options.runUntil ?? waitForShutdownSignal(logger));
+  try {
+    await (options.runUntil ?? waitForShutdownSignal(logger));
+  } finally {
+    configWatcher.stop();
+  }
   await orchestrator.stop(); // drain in-flight tick + workers (FR20)
 
   logger.info("symphony host stopped", { action: "host_stop", mode: "daemon", outcome: "clean" });

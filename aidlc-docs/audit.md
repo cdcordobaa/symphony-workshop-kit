@@ -165,3 +165,49 @@
 **Context**: CONSTRUCTION → truly-live run complete. The Notion Symphony product genuinely reads a live board and spawns real agents end-to-end. (Token in chat history — consider rotating post-workshop.)
 
 ---
+
+## DEV-5 — Dynamic `WORKFLOW.md` watch/reload without restart (Phase 2, spec §6.2)
+**Timestamp**: 2026-09-21T00:00:00Z
+**User Input**: Dogfood ticket DEV-5 on the Notion Symphony Dev Board, claimed and dispatched by the
+Symphony daemon itself: "Dynamic `WORKFLOW.md` watch/reload (spec §8.7). Editing the workflow file must
+take effect without restarting the daemon. Watch the loaded `WORKFLOW.md` path; on change, re-parse and
+re-resolve config, then apply the new `polling.interval_ms` and `agent.max_concurrent_agents` to the
+running loop. A file that fails to parse or validate must be REJECTED: log the error, keep the previous
+good config, and keep the daemon alive. Never reload `tracker.auth` into a log line (FR21). In-flight runs
+are not disturbed. Tests in `test/orchestrator/`; drive the watcher through an injected seam."
+**AI Response**: "Implemented the feature in two halves so detection and application stay separable.
+(1) **`src/config/watcher.ts`** — `reloadWorkflow(path, env)` re-runs the whole §6.1 pipeline
+(load → parse → resolve → §6.3 preflight) and NEVER throws, returning `{ok:false, errors}` instead;
+`ConfigWatcher` owns the last-known-good snapshot and pushes only accepted, *changed* reloads to its
+`onReload`. The filesystem notification source is an injected `WorkflowWatch` seam, so every test fires
+`onChange()` synchronously and nothing sleeps on a real fs event. The production default `createFsWatch`
+watches the *containing directory* filtered by basename (an editor's write-temp+rename detaches an inode
+watch) and debounces bursts. (2) **`Orchestrator.applyConfig`** — `config` stopped being `readonly` and is
+now swapped whole (never mutated), so an in-flight worker that captured the previous object is unaffected;
+it re-applies `polling.interval_ms` to `state.poll_interval_ms`, `agent.max_concurrent_agents` to
+`state.max_concurrent_agents`, and `agent.max_retry_backoff_ms` to the retry queue (new
+`RetryQueue.setMaxBackoffMs`). Because a daemon could otherwise be asleep on the OLD interval for up to
+30s after shortening it, applyConfig also CANCELS and re-arms an already-pending tick at the new delay
+(§8.1 'the effective poll interval SHOULD be updated when workflow config changes are re-applied').
+Wired into `runCli`'s daemon mode only (not `--once`), started before the loop and stopped in a `finally`
+ahead of `orchestrator.stop()`. FR21: the success log carries only the workflow path and the two
+live-tunable scheduling fields; `tracker.auth` is compared in memory (JSON equality) and never passed to
+the logger — asserted with a redaction-free capture logger, so the test would catch a leak the logger's
+own scrubber would otherwise mask.
+**Evidence observed**: baseline on `main` `npm ci && npm run build && npm test` = 208 tests / 207 pass /
+1 skipped / 0 fail. After the change: build clean, `npm test` = **223 tests / 222 pass / 1 skipped /
+0 fail** (15 new tests in `test/orchestrator/config-reload.test.ts`; no existing test weakened or skipped).
+New `npm run smoke:reload` exercises the REAL `fs.watch` path end-to-end and prints PASS: good edit applied
+live (interval 30000→5000, cap 1→3, no restart), malformed edit rejected with the previous config kept and
+the daemon still ticking, in-flight run never disturbed, `tracker.auth` absent from every emitted record.
+`smoke:config`, `smoke:retry`, `smoke:e2e` re-run and still PASS. `npm run typecheck` reports 10
+pre-existing errors in `test/agent/runner.test.ts` + `test/tracker/notion-rest.test.ts` — verified identical
+on a clean stash of `main`, zero from the new files; `typecheck` is not part of the ticket's DoD command.
+**Defect noted (documentation, non-blocking)**: the ticket cites **spec §8.7**, but `spec/SYMPHONY-SPEC.md`
+has no §8.7 — §8 ends at §8.6, and Dynamic Reload Semantics is **§6.2**. Built against §6.2 (plus §8.1 for
+the live poll cadence); the intent was unambiguous. Recorded under `## Current Status` along with the
+residual §6.2 scope boundary: the agent runner's prompt template / `agent.command` and the workspace
+manager's root are still bound at `buildRuntime` construction, and the §6.2 SHOULD for a defensive
+re-validate before each dispatch is not wired — both want a follow-up ticket.
+**Context**: CONSTRUCTION → Phase 2 (Core Conformance Completion), dogfood capstone. Ticket moved to
+**In Review** with a PR against `main`; deliberately NOT Done — the loop pauses for a human merge.
