@@ -87,7 +87,8 @@ export interface ScheduleInput {
  */
 export class RetryQueue {
   private readonly entries: Map<string, RetryEntry>;
-  private readonly maxBackoffMs: number;
+  /** Mutable: a dynamic `WORKFLOW.md` reload can re-tune the backoff cap (§6.2). */
+  private maxBackoffMs: number;
   private readonly baseMs: number;
   private readonly onDue: (issueId: string) => void;
   private readonly setTimer: (fn: () => void, ms: number) => TimerHandle;
@@ -104,6 +105,14 @@ export class RetryQueue {
     this.clearTimer = deps.clearTimer;
     this.now = deps.now;
     this.logger = deps.logger;
+  }
+
+  /**
+   * Re-tune the backoff cap after a config reload (§6.2). Applies to retries
+   * scheduled from here on; already-armed timers are left alone.
+   */
+  setMaxBackoffMs(capMs: number): void {
+    this.maxBackoffMs = capMs;
   }
 
   /**

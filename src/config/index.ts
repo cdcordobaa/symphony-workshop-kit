@@ -4,3 +4,4 @@ export * from "./loader.js";
 export * from "./config.js";
 export * from "./redact.js";
 export * from "./preflight.js";
+export * from "./watcher.js";

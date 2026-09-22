@@ -34,6 +34,12 @@
  *     availability `min(global, per_state[S])`). Enforced in {@link shouldDispatch}
  *     via the running-map per-state counts.
  *
+ *   - **Dynamic config reload (§6.2 / DEV-5)**: {@link Orchestrator.applyConfig}
+ *     adopts a re-validated config live — new `polling.interval_ms` (re-arming a
+ *     pending tick) and `agent.max_concurrent_agents` take effect without a
+ *     restart. In-flight runs are never disturbed; only subsequent scheduling is.
+ *     Detecting the file change is the config watcher's job.
+ *
  * Deferred (PRD §5.3, intentionally absent): continuation retries after a *clean*
  * turn and stall detection. Persistence across restarts is permanently out (§5.4)
  * — all scheduler state, including retry timers, is in-memory.
@@ -126,7 +132,13 @@ function nextAttempt(previous: number | null): number {
  * deterministically without real timers.
  */
 export class Orchestrator {
-  private readonly config: ServiceConfig;
+  /**
+   * Current effective config. NOT readonly: a dynamic `WORKFLOW.md` reload swaps
+   * this reference via {@link applyConfig} (§6.2). It is always replaced whole,
+   * never mutated in place, so anything that captured the previous object (an
+   * in-flight worker's launch-time config) is unaffected.
+   */
+  private config: ServiceConfig;
   private readonly tracker: TrackerClient;
   private readonly workspaceManager: WorkspaceManager;
   private readonly agentRunner: AgentRunner;
@@ -169,6 +181,66 @@ export class Orchestrator {
       now: deps.nowMs ?? (() => Date.now()),
       logger: this.logger,
     });
+  }
+
+  /**
+   * Adopt a reloaded, already-validated {@link ServiceConfig} (§6.2 / DEV-5).
+   *
+   * The caller ({@link import("../config/watcher.js").ConfigWatcher}) has already
+   * re-parsed, re-resolved, and preflighted the file; a rejected edit never
+   * reaches here, so the last known good config stays in force.
+   *
+   * What changes:
+   *   - `polling.interval_ms` → `state.poll_interval_ms`, and a **pending tick is
+   *     re-armed** at the new delay so a shortened cadence takes effect now
+   *     instead of after the old sleep expires (§8.1: "the effective poll interval
+   *     SHOULD be updated when workflow config changes are re-applied");
+   *   - `agent.max_concurrent_agents` → `state.max_concurrent_agents`, which the
+   *     §8.3 slot accounting reads on the next dispatch decision;
+   *   - `agent.max_retry_backoff_ms` → the retry queue's cap, for retries
+   *     scheduled from here on;
+   *   - everything else the orchestrator reads off `this.config` (active/terminal
+   *     state sets, per-state caps) applies to the next tick by reference swap.
+   *
+   * What does NOT change: **in-flight runs are untouched** (§6.2: implementations
+   * are not required to restart live agent sessions). Only subsequent scheduling
+   * sees the new values. The agent runner's bound prompt template / `agent.command`
+   * and the workspace manager's root are likewise still bound at construction —
+   * reloading those is out of this ticket's scope.
+   *
+   * FR21: the log line carries only the two live-tunable scheduling fields — a
+   * reloaded `tracker.auth` is never logged.
+   */
+  applyConfig(next: ServiceConfig): void {
+    const previousIntervalMs = this.state.poll_interval_ms;
+
+    this.config = next;
+    this.state.poll_interval_ms = next.polling.interval_ms;
+    this.state.max_concurrent_agents = next.agent.max_concurrent_agents;
+    this.retryQueue.setMaxBackoffMs(next.agent.max_retry_backoff_ms);
+
+    this.logger.info("config reloaded; applied to running loop", {
+      action: "config_apply",
+      poll_interval_ms: this.state.poll_interval_ms,
+      max_concurrent_agents: this.state.max_concurrent_agents,
+      running_count: this.state.running.size,
+    });
+
+    // Re-arm a sleeping tick so a shortened interval does not wait out the old one.
+    if (
+      previousIntervalMs !== this.state.poll_interval_ms &&
+      this.tickTimer !== null &&
+      !this.stopped
+    ) {
+      this.clearTimer(this.tickTimer);
+      this.tickTimer = null;
+      this.scheduleTick(this.state.poll_interval_ms);
+    }
+  }
+
+  /** The current effective config (tests / diagnostics). Replaced whole on reload. */
+  getConfig(): ServiceConfig {
+    return this.config;
   }
 
   /** Read-only view of the authoritative runtime state (tests / status / smoke). */
