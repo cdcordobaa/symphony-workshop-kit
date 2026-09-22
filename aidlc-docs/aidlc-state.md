@@ -98,6 +98,16 @@
   `arkatechie/ark-65-demo-helloworld-log-function` off `docs/lab-hand-driven-loop` @ `bcc44ed`.
   Post-change on that branch: `npm run typecheck` clean, `npm run build` clean, `npm test`
   **11 pass / 0 fail / 0 skipped** (baseline was 10/10 — nothing weakened).
+- **Out-of-band demo ticket**: **ARK-66** "Demo: helloSymphony() log function" — the sibling of
+  ARK-65 above (`src/demo/hello-symphony.ts` + `test/demo/hello-symphony.test.ts`), same shape and
+  same exemptions: not an M1 unit, no `docs/tasks/` task file, no smoke-matrix row, no unit
+  checkbox ticked. Together the two tickets add a `src/demo/` tree that sits outside the
+  `BUILD-CONTRACT.md` project layout and depends on nothing — read it as loop instrumentation, not
+  product surface, and do not treat `src/demo/` as a precedent for later units. Implemented on
+  branch `arkatechie/ark-66-demo-hellosymphony-log-function`; ARK-65 landed first, so this branch
+  merged `docs/lab-hand-driven-loop` @ `6b1a8a3` and resolved the expected additive conflict in
+  this file and in `audit.md` (both sides kept). Post-merge: `npm run typecheck` clean,
+  `npm run build` clean, `npm test` **12 pass / 0 fail / 0 skipped** (10 baseline + ARK-65 + ARK-66).
 - **Next stage**: implement **SYM-002/ARK-59** and **SYM-003/ARK-60** (both unblocked by ARK-58),
   then proceed in wave order to the real-Notion e2e MVP gate at SYM-007/**ARK-64**.
 - **Open plan defects raised by the ARK-58 run** (not yet applied to `docs/tasks/`):
